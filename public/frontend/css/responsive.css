@@ -1,0 +1,605 @@
+@media (max-width: 992px) {
+  .hero-img {
+    width: 100%;
+    height: auto;
+  }
+
+  .banner_img {
+    float: none;
+    text-align: center;
+    margin-top: 30px;
+  }
+
+  .hero_banner_section {
+    padding-bottom: 80px;
+  }
+}
+
+/* ========== SERVICES SECTION ========== */
+@media (max-width: 1200px) {
+  .services {
+    width: 100%;
+    max-width: 1247px;
+    padding: 30px 15px;
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .services-wrapper {
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .service-card {
+    width: 45%;
+  }
+    p.home_paragraph {
+    text-align: center;
+}
+.hero-buttons {
+    margin-top: 20px;
+    text-align: center;
+}
+section.services {
+    margin-bottom: 20px;
+}
+section.about-section.py-5 {
+    text-align: center;
+}
+.img-main {
+    width: 45% !important;
+    height: auto !important;
+    float: right;
+}
+.img-overlay {
+    position: static;
+    width: 45%;
+    margin: 0px;
+}
+.how-it-works-header {
+    text-align: center !important;
+    display: contents;
+}
+.how-it-works-text {
+    max-width: none;
+    color: #777;
+    line-height: 1.6;
+}
+.d-flex.gap-3 {
+    justify-content: center;
+}
+.home_form_text {
+    text-align: center;
+}
+}
+
+@media (max-width: 480px) {
+    h1 {
+  font-size: 40px;
+  line-height: 72px;
+  font-weight: 500;
+}
+
+h2 {
+  font-size: 35px;
+  line-height: 65px;
+  font-weight: 400;
+}
+p{
+      font-size: 16px;
+}
+  .service-card {
+    width: 100%;
+  }
+  h1.banner_heading {
+    font-size: 40px;
+    line-height: 50px;
+}
+p.home_paragraph {
+    font-size: 15px;
+}
+.hero-buttons {
+    display: flex;
+    font-size: 14px;
+    text-align: center;
+    justify-content: center;
+}
+}
+
+/* ========== ABOUT SECTION ========== */
+@media (max-width: 992px) {
+  .img-main {
+    width: 100% !important;
+    height: auto !important;
+    float: none;
+  }
+
+  .img-overlay {
+    position: static;
+    width: 60%;
+    margin-top: 20px;
+  }
+}
+
+/* ========== BENEFITS SECTION ========== */
+@media (max-width: 768px) {
+  .benefit_service_provider {
+    padding: 30px 20px;
+  }
+    .provider-service-card {
+    max-width: 100% !important;
+  }
+}
+
+/* ========== HOW IT WORKS ========== */
+@media (max-width: 768px) {
+  .how-it-works-box {
+    gap: 20px;
+  }
+
+  .how-it-works-divider {
+    display: none;
+  }
+  .jacklap-app-container {
+    text-align: center;
+    padding: 50px;
+}
+}
+
+/* ========== HOME FORM ========== */
+@media (max-width: 992px) {
+  .home_form_ {
+    flex-direction: column;
+  }
+
+  .home_form_box {
+    width: 100%;
+  }
+  
+}
+
+/* ========== FOOTER ========== */
+@media (max-width: 768px) {
+  .footer_section {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .banner_heading {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+  .footer_container {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .footer_social {
+    float: none;
+    margin-top: 15px;
+  }
+
+  .footer_bottom {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+}
+@media (max-width: 768px) {
+
+
+  .header-location .location-text {
+    display: none;
+  }
+
+  .header-location {
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-location {
+    display: none;
+  }
+}
+
+
+@media (max-width: 768px) {
+
+  .header-location .location-text {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-location {
+    display: none;
+  }
+
+}
+@media (max-width: 768px) {
+  .profile-container {
+    flex-direction: row;
+  }
+  .sidebar {
+    width: 50%;
+    display: block;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .sidebar .menu {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .seeker_basic_details {
+    width: 100%;
+  }
+}
+
+@media (max-width: 580px) {
+  .seeker_booking_card_meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+    .profile-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    display: block;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .seeker_booking_provider {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .seeker_booking_view_profile {
+    width: 100%;
+    text-align: center;
+  }
+
+  .seeker_booking_summary_row {
+    font-size: 13px;
+  }
+    .footer_bottom {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .footer_policy {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .footer_policy span:nth-child(even) {
+    display: none;
+  }
+
+  .footer_social {
+    justify-content: center;
+  }
+  .footer_col img {
+    padding-bottom: 15px;
+    width: 100%;
+}
+.provider-left {
+    gap: 10px;
+}
+.provider-right i {
+    margin-left: 15px;
+}
+.user-menu {
+    position: relative;
+    margin-left: 0px;
+}
+.seeker_basic_details {
+    padding: 20px 10px;
+}
+.footer_social {
+ float: none;
+}
+  .seeker_detail_meta {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .seeker_detail_btn {
+    width: 100%;
+  }
+
+  .seeker_detail_footer {
+    padding: 12px 0;
+  }
+}
+@media (max-width: 768px) {
+  .footer_container {
+    flex-direction: column;
+    gap: 24px;
+  }
+.btn-detail {
+    text-align: center;
+    font-size: 15px !important;
+}
+
+  .col-lg-3 {
+    width: 100%;
+  }
+
+  .footer_col {
+    width: 100%;
+  }
+
+  .footer_subscribe {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .footer_subscribe input {
+    width: 100%;
+  }
+
+  .footer_subscribe button {
+    width: 100%;
+  }
+     .seeker_detail_inner {
+    flex-direction: column;
+  }
+
+  .seeker_detail_left {
+    width: 100%;
+  }
+
+  .seeker_detail_right {
+    width: 100%;
+  }
+
+  .seeker_detail_top {
+    flex-direction: column;
+  }
+
+.seeker_detail_top img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    object-position: top;
+}
+
+  .seeker_detail_options {
+    flex-direction: column;
+  }
+
+  .seeker_detail_option {
+    width: 100%;
+  }
+}
+/* HAMBURGER */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  padding: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.hamburger-btn span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: #6b7280;
+  border-radius: 2px;
+}
+
+/* MOBILE NAV */
+.mobile-nav {
+  display: none;
+  flex-direction: column;
+  padding: 8px 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.mobile-nav.open {
+  display: flex;
+}
+
+.mobile-nav a {
+  text-decoration: none;
+  font-size: 14px;
+  color: #6b7280;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.mobile-nav a.active,
+.mobile-nav a:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* 480px tak hamburger dikhega, nav chhupega */
+@media (max-width: 480px) {
+  .hamburger-btn {
+    display: flex;
+  }
+
+  .provider-nav {
+    display: none;
+  }
+
+  .header-location {
+    display: none;
+  }
+    .login-image {
+    display: none;
+  }
+    .login-form- {
+    padding: 0px 16px;
+  }
+  .or-divider::before, .or-divider::after {
+    width: 31%;
+}
+figure {
+display: none;
+}
+.seeker_addaddr_field input {
+    width: 100%;
+}
+.seeker_change_partner {
+    font-size: 12px;
+}
+.seeker_cart_inner {
+    display: grid;
+    gap: 30px;
+}
+.btn-detail {
+    text-align: center;
+ font-size: 15px;
+}
+.service-name {
+    font-size: 15px;
+}
+.seeker_cart_top_row {
+    display: grid;
+    gap: 30px !important;
+}
+.seeker_booking_inner {
+    display: grid !important;
+}
+
+}
+
+/* 481px se upar nav dikhega, hamburger chhupega */
+@media (min-width: 481px) {
+  .hamburger-btn {
+    display: none !important;
+  }
+
+  .login-wrapper {
+    margin: 10px;
+}
+.or-divider::before, .or-divider::after {
+    width: 31%;
+}
+img.social-icon {
+    width: 75px;
+}
+  .login-image {
+    display: block;
+  }
+
+.seeker_cart_inner {
+    display: grid;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+
+}
+@media (min-width: 991px) {
+  .seeker_cart_inner {
+    display: flex;
+    gap: 100px;
+    align-items: flex-start;
+}
+.btn-detail {
+    text-align: center;
+}
+
+}
+@media (max-width: 991px) {
+  .login-image figure img {
+display: none;
+  }
+  
+}
+@media (min-width: 768px) and (max-width: 991px)
+{
+  .service-name {
+    font-size: 15px;
+}
+
+}
+/* Screens between 769px and 991px */
+@media (min-width: 769px) and (max-width: 991px) {
+    .btn-detail {
+        text-align: center;
+        font-size: 15px !important;
+    }
+      .header-location .location-text {
+    display: none;
+  }
+    .seeker-service-card {
+    flex-direction: column;
+  }
+
+  .service-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+  }
+
+  .service-body {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .btn-detail {
+    width: 100%;
+    text-align: center;
+    display: block;
+  }
+}
+@media (min-width: 481px) and (max-width: 767px) {
+   .seeker-service-card {
+    flex-direction: column;
+  }
+
+  .service-img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+  }
+
+  .service-body {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .btn-detail {
+    width: 100%;
+    text-align: center;
+    display: block;
+  }
+  .header-location {
+    display: none;
+}
+
+.provider-nav {
+    display: flex !important;
+    gap: 14px;
+}
+.seeker_booking_inner {
+    display: grid !important;
+}
+  figure {
+display: none;
+}
+}

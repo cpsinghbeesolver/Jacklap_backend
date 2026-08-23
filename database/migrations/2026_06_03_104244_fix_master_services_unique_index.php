@@ -1,0 +1,24 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('master_services', function (Blueprint $table) {
+            $table->dropUnique('master_services_name_service_category_id_unique');
+            $table->unique(['name', 'service_category_id', 'subject_type'], 'master_services_name_category_subject_unique');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('master_services', function (Blueprint $table) {
+            $table->dropUnique('master_services_name_category_subject_unique');
+            $table->unique(['name', 'service_category_id'], 'master_services_name_service_category_id_unique');
+        });
+    }
+};

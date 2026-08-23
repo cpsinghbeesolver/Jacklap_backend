@@ -1,0 +1,175 @@
+// * Authentication
+// *******************************************************************************
+
+@use '../_bootstrap-extended/include' as light;
+@import '../_custom-variables/pages';
+
+$authentication-1-inner-max-width: 460px !default;
+
+.authentication-wrapper {
+  display: flex;
+  flex-basis: 100%;
+  min-height: 100vh;
+  width: 100%;
+
+  .authentication-inner {
+    width: 100%;
+  }
+
+  &.authentication-basic {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .auth-cover-illustration {
+    z-index: 1;
+    max-inline-size: 38rem;
+  }
+
+  .authentication-image-object {
+    &-left {
+      position: absolute;
+      bottom: 6%;
+      inset-inline-start: 4%;
+    }
+
+    &-right {
+      position: absolute;
+      bottom: 7%;
+      inset-inline-end: 4%;
+    }
+  }
+
+  .authentication-image {
+    z-index: -1;
+    inline-size: 100%;
+    position: absolute;
+    inset-inline-start: 0;
+    bottom: 0;
+  }
+
+  .authentication-image-model {
+    width: 768px;
+  }
+
+  &.authentication-cover {
+    align-items: flex-start;
+
+    .authentication-inner {
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .authentication-image {
+      inset-inline-start: unset;
+    }
+
+    .authentication-image-tree {
+      position: absolute;
+      bottom: 4rem;
+      left: 3rem;
+    }
+  }
+
+  &.authentication-basic .authentication-inner {
+    max-width: $authentication-1-inner-max-width;
+  }
+
+  // For two-steps auth
+  .auth-input-wrapper .auth-input {
+    max-width: 50px;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+    font-size: light.$large-font-size;
+  }
+}
+
+// Two-steps auth responsive style
+@include light.media-breakpoint-down(sm) {
+  .authentication-wrapper {
+    .auth-input-wrapper .auth-input {
+      font-size: light.$h5-font-size;
+    }
+  }
+}
+
+// Light Layout
+@if $enable-light-style {
+  .light-style {
+    .authentication-wrapper .authentication-bg {
+      background-color: light.$white;
+    }
+  }
+}
+
+/* register portal css*/
+.authentication-wrapper.authentication-basic.container-p-y {
+  background-color: #f4efef !important;
+}
+
+.authentication-wrapper .card.p-7 {
+  background-color: #2C2C2C !important;
+}
+
+.authentication-wrapper .card-body.mt-1 h4,
+p {
+  color: #fff;
+}
+
+.authentication-wrapper .card-body.mt-1 h4,
+p,
+a {
+  color: #fff;
+}
+
+form#formAuthentication .form-check-label {
+  color: #fff !important;
+  cursor: pointer;
+}
+
+.authentication-inner img {
+  display: none !important;
+}
+
+form#formAuthentication .btn-primary {
+  background-color: #1B5E20 !important;
+  border: none !important;
+  color: #000;
+}
+
+form#formAuthentication .btn-primary:hover {
+  color: #000 !important;
+}
+
+.authentication-inner .app-brand-text {
+  color: #1B5E20 !important;
+}
+
+form#formAuthentication .form-floating-outline .form-control:focus {
+  border-color: #1B5E20 !important;
+}
+
+.form-floating>.form-control:focus~label {
+  color: #676767 !important;
+}
+
+.form-control {
+  color: #fff !important;
+}
+
+.form-control:autofill {
+  color: red !important;
+}
+
+form#formAuthentication .form-check-input:checked {
+  background-color: #1B5E20;
+  border-color: #1B5E20;
+}
+
+form#formAuthentication .form-check-input:checked::after {
+  color: #000 !important;
+}
+
+a span:hover {
+  color: #1B5E20 !important;
+}

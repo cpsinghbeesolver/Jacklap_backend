@@ -1,0 +1,277 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Relation ''category'' is not found in App\\Models\\MasterService model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Http/Controllers/Admin/MasterServiceController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$languages\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/AuthController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Booking\:\:\$items\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/BookingController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Cart\:\:\$items\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/BookingController.php
+
+		-
+			message: '#^Relation ''items'' is not found in App\\Models\\Booking model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Http/Controllers/Api/BookingController.php
+
+		-
+			message: '#^Relation ''items'' is not found in App\\Models\\Cart model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/BookingController.php
+
+		-
+			message: '#^Relation ''provider'' is not found in App\\Models\\Booking model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/BookingController.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\Booking model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/BookingController.php
+
+		-
+			message: '#^Relation ''items'' is not found in App\\Models\\Cart model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/CartController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\:\:\$services\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''items'' is not found in App\\Models\\MasterService model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''languages'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''licenseTypes'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''materials'' is not found in App\\Models\\ServiceCategory model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''professionalDetail'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''providerMaterials'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''serviceUsecases'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''services'' is not found in App\\Models\\ServiceCategory model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Relation ''services'' is not found in App\\Models\\User model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Http/Controllers/Api/ServiceCategoryController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Booking\:\:\$earnings\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Booking\:\:\$label\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Booking\:\:\$month\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Booking\:\:\$recurring_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Booking\:\:\$recurring_end_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Booking\:\:\$recurring_start_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Booking\:\:\$year\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$addOnServices\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$languages\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$professionalDetail\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$services\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Relation ''certificates'' is not found in App\\Models\\Media model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\AvailabilitySlot model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/Api/UserController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Media\:\:\$certificates\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/UserDetailsController.php
+
+		-
+			message: '#^PHPDoc type array of property App\\Http\\Middleware\\CheckForMaintenanceMode\:\:\$except is not covariant with PHPDoc type array\<int, string\> of overridden property Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance\:\:\$except\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Http/Middleware/CheckForMaintenanceMode.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$certificates\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$id_back\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$id_front\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$identity_type_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$profile_photo\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$updated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\MediaResource\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/MediaResource.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Models\\User\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Models\\User\:\:\$hidden is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$hidden\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Property ''average_rating'' does not exist in model\.$#'
+			identifier: rules.modelAppends
+			count: 1
+			path: app/Models/User.php

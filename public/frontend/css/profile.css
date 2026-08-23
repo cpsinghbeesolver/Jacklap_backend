@@ -1,0 +1,580 @@
+/* LAYOUT */
+.profile-container{
+display:flex;
+max-width:1300px;
+margin:40px auto;
+gap:50px;
+}
+
+/* SIDEBAR */
+.sidebar{
+width:50%;
+}
+
+.menu{
+padding:15px 10px;
+border-bottom:1px solid #ddd;
+cursor:pointer;
+margin-left: 5px;
+}
+
+
+.menu h4{
+margin:0;
+font-size:16px;
+}
+.menu a {
+    text-decoration: none !important;
+}
+
+.menu p{
+margin:5px 0 0;
+font-size:13px;
+color:#777;
+}
+
+.menu.active p{
+color:#1f5d2e;
+font-weight:600;
+}
+
+/* CONTENT */
+.content{
+flex:1;
+}
+
+/* CARD */
+.card{
+background:#fff;
+border-radius:10px;
+padding:20px;
+margin-bottom:20px;
+border:1px solid #e5e5e5;
+}
+
+/* HEADER */
+.card-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:15px;
+}
+
+.card-header i{
+cursor:pointer;
+color:#777;
+}
+
+/* ROW */
+.row{
+display:flex;
+margin-bottom:10px;
+}
+
+.row span{
+width:180px;
+color:#777;
+font-size:14px;
+}
+
+.row p{
+margin:0;
+font-size:14px;
+}
+
+/* LABEL */
+.label{
+font-size:13px;
+color:#777;
+margin:10px 0;
+}
+
+/* DESCRIPTION */
+.description{
+background:#f3f3f3;
+padding:10px;
+border-radius:6px;
+font-size:13px;
+color:#555;
+margin-bottom:10px;
+}
+
+/* SUB TITLE */
+.sub-title{
+color:#1f5d2e;
+margin-top:15px;
+}
+
+/* FILE BOX */
+.file-box{
+display:flex;
+align-items:center;
+gap:10px;
+border:1px solid #ddd;
+padding:10px;
+border-radius:8px;
+margin-top:10px;
+}
+
+.file-box i{
+font-size:18px;
+color:#d9534f;
+}
+
+.file-box div p{
+margin:0;
+font-size:14px;
+}
+
+.file-box div span{
+font-size:12px;
+color:#777;
+}
+
+.file-box .bi-x{
+margin-left:auto;
+cursor:pointer;
+color:#999;
+}
+
+
+/* ===== BASIC DETAILS BOX ===== */
+.seeker_basic_details {
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+}
+
+.seeker_basic_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.seeker_basic_header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+.seeker_basic_header i {
+  font-size: 18px;
+  color: #888;
+  cursor: pointer;
+}
+
+.seeker_basic_header i:hover {
+  color: #2e7d32;
+}
+
+.seeker_basic_row {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.seeker_basic_row:last-child {
+  border-bottom: none;
+}
+
+.seeker_basic_label {
+  font-size: 14px;
+  color: #888;
+  min-width: 100px;
+}
+
+.seeker_basic_value {
+  font-size: 14px;
+  color: #111;
+  font-weight: 500;
+}
+
+
+
+/* ADD NEW ADDRESS */
+.seeker_addr_add {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #c8e6c9;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  color: #2e7d32;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.seeker_addr_add i {
+  font-size: 18px;
+  color: #2e7d32;
+}
+
+.seeker_addr_add:hover {
+  background: #f0faf0;
+}
+
+/* ADDRESS CARD */
+.seeker_addr_card {
+    background: #F2F2F2;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #D6D6D6;
+}
+
+.seeker_addr_card_top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.seeker_addr_tag {
+  background: #fff;
+  border: 1.5px solid #2e7d32;
+  color: #2e7d32;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 3px 12px;
+}
+
+.seeker_addr_dots {
+  font-size: 18px;
+  color: #888;
+  cursor: pointer;
+}
+
+.seeker_addr_name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 6px 0;
+}
+
+.seeker_addr_line {
+  font-size: 13px;
+  color: #444;
+  margin: 0 0 4px 0;
+  line-height: 1.5;
+}
+/* ===== ADD ADDRESS FORM ===== */
+.seeker_addaddr_form {
+  margin-bottom: 16px;
+}
+
+.seeker_addaddr_row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.seeker_addaddr_field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seeker_addaddr_field label {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.seeker_addaddr_field input {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  color: #111;
+  background: #fff;
+}
+
+.seeker_addaddr_field input:focus {
+  border-color: #2e7d32;
+}
+
+.seeker_addaddr_select_wrap {
+  position: relative;
+}
+
+.seeker_addaddr_select_wrap input {
+  width: 100%;
+  padding-right: 32px;
+}
+
+.seeker_addaddr_select_wrap i {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.seeker_addaddr_input_icon {
+  position: relative;
+}
+
+.seeker_addaddr_input_icon input {
+  width: 100%;
+  padding-right: 32px;
+}
+
+.seeker_addaddr_input_icon i {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* ADDRESS TYPE */
+.seeker_addaddr_type {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.seeker_addaddr_type > label {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.seeker_addaddr_type_options {
+  display: flex;
+  gap: 20px;
+}
+
+.seeker_addaddr_radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+.seeker_addaddr_radio input[type="radio"] {
+  accent-color: #2e7d32;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* BUTTONS */
+.seeker_addaddr_btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.seeker_addaddr_cancel {
+  background: #fff;
+  color: #333;
+  border: 1.5px solid #ccc;
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.seeker_addaddr_cancel:hover {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+
+.seeker_addaddr_save {
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.seeker_addaddr_save:hover {
+  background: #1b5e20;
+}
+
+/* ===== MY BOOKINGS ===== */
+.seeker_booking_card {
+  background: #f7f7f7;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.seeker_booking_card:last-child {
+  margin-bottom: 0;
+}
+
+.seeker_booking_card_top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.seeker_booking_card_top h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  margin: 0;
+}
+
+.seeker_booking_card_top i {
+  font-size: 16px;
+  color: #888;
+}
+
+.seeker_booking_card_meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seeker_booking_card_meta span {
+  font-size: 13px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.seeker_booking_card_meta i {
+  font-size: 13px;
+  color: #888;
+}
+/* my booking open card */
+.seeker_booking_expanded {
+  margin-top: 14px;
+}
+
+.seeker_booking_expanded h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  margin: 0 0 10px 0;
+}
+
+.seeker_booking_service_item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.seeker_booking_service_item i {
+  color: #2e7d32;
+  font-size: 15px;
+}
+
+.seeker_booking_divider {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 14px 0;
+}
+
+/* PROVIDER */
+.seeker_booking_provider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.seeker_booking_provider_left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.seeker_booking_provider_left img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.seeker_booking_provider_name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+  display: block;
+}
+
+.seeker_booking_provider_rating {
+  font-size: 12px;
+  color: #555;
+}
+
+.seeker_booking_provider_rating i {
+  color: #f5a623;
+}
+
+.seeker_booking_view_profile {
+  font-size: 13px;
+  color: #2e7d32;
+  font-weight: 600;
+  text-decoration: none;
+  align-self: flex-end;
+}
+
+.seeker_booking_view_profile:hover {
+  text-decoration: underline;
+}
+
+/* PAYMENT SUMMARY */
+.seeker_booking_summary_row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #555;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.seeker_booking_summary_bold {
+  font-weight: 700;
+  color: #111;
+  font-size: 14px;
+}
+
+.seeker_booking_green {
+  color: #2e7d32;
+  font-weight: 700;
+}
+
+.seeker_booking_cod {
+  font-size: 12px;
+  color: #888;
+  margin: 6px 0 0 0;
+}
+.seeker_booking_hidden {
+  display: none;
+}

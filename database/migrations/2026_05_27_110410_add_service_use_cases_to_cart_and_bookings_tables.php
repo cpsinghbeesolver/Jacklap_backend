@@ -1,0 +1,51 @@
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('carts', function (Blueprint $table) {
+
+            if (!Schema::hasColumn('carts', 'service_use_cases')) {
+                $table->json('service_use_cases')
+                    ->nullable()
+                    ->after('tax');
+            }
+        });
+
+        Schema::table('bookings', function (Blueprint $table) {
+
+            if (!Schema::hasColumn('bookings', 'service_use_cases')) {
+                $table->json('service_use_cases')
+                    ->nullable()
+                    ->after('tax');
+            }
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('carts', function (Blueprint $table) {
+
+            if (Schema::hasColumn('carts', 'service_use_cases')) {
+                $table->dropColumn('service_use_cases');
+            }
+        });
+
+        Schema::table('bookings', function (Blueprint $table) {
+
+            if (Schema::hasColumn('bookings', 'service_use_cases')) {
+                $table->dropColumn('service_use_cases');
+            }
+        });
+    }
+};

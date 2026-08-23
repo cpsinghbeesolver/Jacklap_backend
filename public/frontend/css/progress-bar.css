@@ -1,0 +1,124 @@
+/* RESET */
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:#f6f6f6;
+}
+
+/* PROGRESS */
+.progress-wrapper{
+display:flex;
+justify-content:center;
+margin:40px 0;
+}
+
+.progress-circle{
+width:170px;
+height:170px;
+border-radius:50%;
+background:conic-gradient(#1f5d2e 0deg 270deg, #d9d9d9 270deg 360deg);
+display:flex;
+align-items:center;
+justify-content:center;
+position:relative;
+}
+
+.progress-circle::before{
+content:"";
+position:absolute;
+width:130px;
+height:130px;
+background:#fff;
+border-radius:50%;
+}
+
+.progress-text{
+position:absolute;
+text-align:center;
+}
+
+.progress-text h2{
+margin:0;
+font-size:22px;
+}
+
+.progress-text span{
+font-size:15px;
+color:#777;
+}
+
+/* CARD */
+.card{
+width:720px;
+margin:0 auto 60px;
+background:#fff;
+border-radius:14px;
+padding:20px;
+border:1px solid #e2e2e2;
+}
+
+.small{
+font-size:13px;
+color:#777;
+}
+
+/* INFO */
+.info{
+margin-top:8px;
+color:#555;
+font-size:14px;
+}
+
+/* SECTIONS */
+.section{
+margin-top:20px;
+}
+
+.section h4{
+margin-bottom:10px;
+font-size:15px;
+}
+
+/* LIST */
+ul{
+padding-left:18px;
+}
+
+ul li{
+margin-bottom:6px;
+font-size:14px;
+}
+
+/* PRICE */
+.price{
+display:flex;
+justify-content:space-between;
+font-size:14px;
+margin:6px 0;
+}
+
+.total{
+color:#1f5d2e;
+font-weight:600;
+}
+
+/* BUTTON */
+.actions{
+display:flex;
+justify-content:flex-end;
+margin-top:25px;
+}
+
+.btn-main{
+padding:12px 25px;
+background:#1f5d2e;
+color:#fff;
+border-radius:10px;
+text-decoration:none;
+font-size:14px;
+}
+
+.btn-main:hover{
+background:#174622;
+}
+

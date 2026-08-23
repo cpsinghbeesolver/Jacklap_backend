@@ -1,0 +1,81 @@
+{
+  "menu": [
+    {
+      "url": "/admin-dashboard",
+      "icon": "menu-icon tf-icons ri-home-smile-line",
+      "name": "Dashboard",
+      "slug": "admin-dashboard"
+    },
+    {
+      "url": "/user-list?role=provider",
+      "icon":"menu-icon tf-icons ri-file-list-line",
+      "name": "Provider Management",
+      "slug": "provider-management"
+    },
+    {
+      "url": "/user-list?role=seeker",
+      "icon":"menu-icon tf-icons ri-file-list-line",
+      "name": "Seeker Management",
+      "slug": "seeker-management"
+    },
+    {
+      "url": "/booking-list",
+      "icon": "menu-icon tf-icons ri-calendar-check-line",
+      "name": "Bookings",
+      "slug": "booking-list"
+    },
+    {
+      "url": "/category-list",
+      "icon": "menu-icon tf-icons ri-stack-line",
+      "name": "Category List",
+      "slug": "category-list"
+    },
+    {
+      "url": "/master-service",
+      "icon": "menu-icon tf-icons ri-tools-line",
+      "name": "Master Services",
+      "slug": "master-service"
+    },
+    {
+      "url": "/pending-service",
+      "icon": "menu-icon tf-icons ri-time-line",
+      "name": "Pending Services",
+      "slug": "pending-service"
+    },
+    {
+      "url": "/document-type",
+      "icon": "menu-icon tf-icons ri-file-list-line",
+      "name": "Document Types",
+      "slug": "document-type"
+    },
+    {
+      "url": "/license-type",
+      "icon": "menu-icon tf-icons ri-file-list-3-line",
+      "name": "License Types",
+      "slug": "license-type"
+    },
+    {
+      "url": "/page",
+      "icon": "menu-icon tf-icons ri-file-text-line",
+      "name": "Pages",
+      "slug": "page"
+    },
+    {
+      "name": "Account Settings",
+      "icon": "menu-icon tf-icons ri-layout-left-line",
+      "slug": "pages-account-settings",
+      "submenu": [
+        {
+          "url": "pages/account-settings-account",
+          "name": "Account",
+          "slug": "pages-account-settings-account"
+        },
+        {
+          "url": "pages/account-settings-notifications",
+          "name": "Notifications",
+          "slug": "pages-account-settings-notifications"
+        }
+      ]
+    }
+  ]
+}
