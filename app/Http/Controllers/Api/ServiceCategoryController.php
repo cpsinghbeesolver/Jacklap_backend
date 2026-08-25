@@ -757,7 +757,7 @@ class ServiceCategoryController extends Controller
                 });
             });
 
-        // Apply distance logic ONLY if lat & long present
+        //Apply distance logic ONLY if lat & long present
         if ($request->filled('latitude') && $request->filled('longitude')) {
 
             $lat = $request->latitude;
@@ -899,7 +899,7 @@ class ServiceCategoryController extends Controller
 
                 $service->items = $services
                     ->where('service_id', $service->service_id)
-                    ->where('subject_type', $service->subject_type)
+                    // ->where('subject_type', $service->subject_type)
                     ->map(function ($item) {
                         return [
                             'id' => $item->service_item_id,

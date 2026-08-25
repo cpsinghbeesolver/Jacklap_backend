@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
 class CartItem extends Model
 {
     protected $fillable = [
@@ -41,7 +40,7 @@ class CartItem extends Model
 
     public function service()
     {
-        return $this->belongsTo(Service::class, 'service_id');
+        return $this->belongsTo(MasterService::class, 'service_id');
     }
 
     public function addonService()

@@ -67,38 +67,38 @@ class ServiceCategorySeeder extends Seeder
                 // -------------------------------------------------------
                 // 1. SERVICE TYPES  →  type = 'service'
                 // -------------------------------------------------------
-                $propertyTypes = [
-                    [
-                        'name'     => 'Room Cleaning',
-                        'sort_order' => 1
-                    ],
-                    [
-                        'name'     => 'Bathroom Cleaning',
-                        'sort_order' => 2
-                    ],
-                    [
-                        'name'     => 'Kitchen  Cleaning',
-                        'sort_order' => 3
-                    ],
-                    [
-                        'name'     => 'Mat Cleaning',
-                        'sort_order' => 7
-                    ]
-                ];
-                foreach ($propertyTypes as $group) {
+                // $propertyTypes = [
+                //     [
+                //         'name'     => 'Room Cleaning',
+                //         'sort_order' => 1
+                //     ],
+                //     [
+                //         'name'     => 'Bathroom Cleaning',
+                //         'sort_order' => 2
+                //     ],
+                //     [
+                //         'name'     => 'Kitchen  Cleaning',
+                //         'sort_order' => 3
+                //     ],
+                //     [
+                //         'name'     => 'Mat Cleaning',
+                //         'sort_order' => 7
+                //     ]
+                // ];
+                // foreach ($propertyTypes as $group) {
  
-                    $masterService = MasterService::firstOrCreate(
-                        [
-                            'name'                => $group['name'],
-                            'service_category_id' => $serviceCategory->id,
-                            'type'                => 'service',
-                        ],
-                        [
-                            'description' => $group['name'],
-                            'is_default'  => 1,
-                            'status'      => 1
-                        ]
-                    );
+                    // $masterService = MasterService::firstOrCreate(
+                    //     [
+                    //         'name'                => $group['name'],
+                    //         'service_category_id' => $serviceCategory->id,
+                    //         'type'                => 'service',
+                    //     ],
+                    //     [
+                    //         'description' => $group['name'],
+                    //         'is_default'  => 1,
+                    //         'status'      => 1
+                    //     ]
+                    // );
  
                     // foreach ($group['items'] as $index => $itemName) {
                     //     MasterServiceItem::firstOrCreate(
@@ -113,13 +113,49 @@ class ServiceCategorySeeder extends Seeder
                     //         ]
                     //     );
                     // }
-                }
+                // }
  
                 // -------------------------------------------------------
                 // 2. SERVICE CATEGORIES  →  type = 'service'
                 //    Sub-items saved in master_service_items
                 // -------------------------------------------------------
                 $serviceGroups = [
+                    [
+                        'name'     => 'Room Cleaning',
+                        'sort_order' => 1,
+                        'input_type'=> 'text',
+                        'items'    => [
+                            'General Cleaning',
+                            'Deep Cleaning'
+                        ]
+                    ],
+                    [
+                        'name'     => 'Bathroom Cleaning',
+                        'sort_order' => 2,
+                        'input_type'=> 'text',
+                        'items'    => [
+                            'General Cleaning',
+                            'Deep Cleaning'
+                        ]
+                    ],
+                    [
+                        'name'     => 'Kitchen  Cleaning',
+                        'sort_order' => 3,
+                        'input_type'=> 'text',
+                        'items'    => [
+                            'General Cleaning',
+                            'Deep Cleaning'
+                        ],
+                    ],
+                    [
+                        'name'     => 'Mat Cleaning',
+                        'sort_order' => 7,
+                        'input_type'=> 'text',
+                        'items'    => [
+                            'General Cleaning',
+                            'Deep Cleaning'
+                        ],
+                    ],
                     [
                         'name'     => 'Move-in / Move-Out',
                         'sort_order' => 4,
@@ -139,16 +175,16 @@ class ServiceCategorySeeder extends Seeder
                             'Carpet (basic)',
                             'Balcony cleaning',
                         ],
-                    ],
-                    [
-                        'name'     => 'Cleaning Types',
-                        'sort_order' => 6,
-                        'input_type'=> 'radio',
-                        'items'    => [
-                            'General Cleaning',
-                            'Deep Cleaning'
-                        ],
-                    ],
+                    ]
+                    // [
+                    //     'name'     => 'Cleaning Types',
+                    //     'sort_order' => 6,
+                    //     'input_type'=> 'radio',
+                    //     'items'    => [
+                    //         'General Cleaning',
+                    //         'Deep Cleaning'
+                    //     ],
+                    // ],
                 ];
  
                 foreach ($serviceGroups as $group) {
