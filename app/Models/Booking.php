@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use App\Models\BookingImage;
 
 class Booking extends Model
 {
@@ -243,5 +244,10 @@ class Booking extends Model
     public function payment()
     {
         return $this->hasOne(Payment::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(BookingImage::class);
     }
 }

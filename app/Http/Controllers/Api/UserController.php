@@ -20,7 +20,6 @@ use App\Models\Language;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -2086,74 +2085,6 @@ class UserController extends Controller
      */
     public function backgroundWebHook(Request $request)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Verify HMAC Signature
-        |--------------------------------------------------------------------------
-        */
-
-        $signature = $request->header('X-HMAC-Signature');
-
-        if (! $signature) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Missing webhook signature.',
-            ], 401);
-        }
-
-        $payload = $request->getContent();
-
-        $expectedSignature = hash_hmac(
-            'sha256',
-            $payload,
-            config('services.background_check.webhook_secret')
-        );
-        if (! hash_equals($expectedSignature, $signature)) {
-
-            Log::warning('Invalid background check webhook signature.', [
-                'signature' => $signature,
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid webhook signature.',
-            ], 401);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validate Payload
-        |--------------------------------------------------------------------------
-        */
-
-
-        $data = $request->validate([
-            'uuid' => ['required', 'uuid'],
-            'email' => ['required', 'email']
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Find User
-        |--------------------------------------------------------------------------
-        */
-
-        $user = User::where('email', $data['email'])->first();
-
-        if (! $user) {
-
-            Log::warning('Background check webhook user not found.', [
-                'email' => $data['email'],
-                'uuid' => $data['uuid'],
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'User not found.',
-            ], 404);
-        }
-
-
         if($request->uuid){
             $user = User::where('email', $request->email)
                     ->where('bg_uuid', $request->uuid)
@@ -2165,21 +2096,6 @@ class UserController extends Controller
                 }
             }
         }
-        foreach ($data['scan_list'] ?? [] as $scan) {
-
-            Log::info('Background check scan updated.', [
-                'user_id' => $user->id,
-                'scan_id' => $scan['id'] ?? null,
-                'scan_name' => $scan['scanName'] ?? null,
-                'status' => $scan['application_status'] ?? null,
-                'score' => $scan['score'] ?? null,
-            ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Webhook processed successfully.',
-        ]);
     }
 }
 

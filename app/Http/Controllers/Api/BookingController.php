@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Cart;
 use App\Models\BookingItem;
+use App\Models\BookingImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -157,7 +158,6 @@ class BookingController extends Controller
                 'status'              => 'pending',
                 'payment_method'      => $request->payment_method,
             ]);
-            $this->sendNewBookingNotification($parentBooking);
 
             $this->attachItems($parentBooking, $cart->serviceItems, $totalHours);
 
@@ -189,11 +189,11 @@ class BookingController extends Controller
                     'parent_booking_id'   => $parentBooking->id,
                     'transmission_type'   => $cart->transmission_type,
                     'start_datetime'      => $slot['date'] . ' ' . $slot['start_time'],
-                    'end_datetime'        => $slot['date'] . ' ' . $slot['end_time'],
+                    'end_datetime'        => $slot['date'] . ' ' . $slot['end_time'] ?? null,
                     'service_requirements' => $cart->service_requirements??null,
                     'slot_date'           => $slot['date'],
                     'slot_start_time'     => $slot['start_time'],
-                    'slot_end_time'       => $slot['end_time'],
+                    'slot_end_time'       => $slot['end_time'] ?? null,
                     'slot_index'          => $index + 1,
 
                     'duration_type'       => $cart->duration_type,
@@ -227,22 +227,16 @@ class BookingController extends Controller
             $cart->delete();
 
             DB::commit();
-            
+
             //Passing child bookings to send notification and email
             try {
                 if(!empty($childBookings)){
                     foreach($childBookings as $childBooking){
-                        
+                        $this->sendNewBookingNotification($childBooking);
                         Mail::send(new BookingCreatedMail($childBooking));
 
                         //New booking Socket
-                        // event(new NewBookingCreated($childBooking->id));
-                        broadcast(new BookingStatusUpdated(
-                            $childBooking->id,
-                            $childBooking->status,
-                            $childBooking->provider_id,
-                            $childBooking->user_id
-                        ));
+                        event(new NewBookingCreated($childBooking->id));
                     }
                 }
             } catch (\Exception $e) {
@@ -334,21 +328,12 @@ class BookingController extends Controller
         ]);
 
         $user = auth()->user();
-        
-        $parentBooking = Booking::with([
-            'childBookings.items',
-            'serviceItems'
-        ])
-        ->where('id', $request->parent_booking_id)
-        ->whereNull('parent_booking_id')
-        ->when($user->hasRole('provider'), function ($query) use ($user) {
-            $query->where('provider_id', $user->id);
-        })
-        ->when($user->hasRole('seeker'), function ($query) use ($user) {
-            $query->where('user_id', $user->id);
-        })
-        ->first();
 
+        $parentBooking = Booking::with(['childBookings.items', 'serviceItems'])
+            ->where('id', $request->parent_booking_id)
+            ->where('provider_id', $user->id)
+            ->whereNull('parent_booking_id')
+            ->first();
 
         if (!$parentBooking) {
             return response()->json([
@@ -523,10 +508,10 @@ class BookingController extends Controller
 
                     $child->update([
                         'start_datetime'  => $slot['date'] . ' ' . $slot['start_time'],
-                        'end_datetime'    => $slot['date'] . ' ' . $slot['end_time'],
+                        'end_datetime'    => $slot['date'] . ' ' . $slot['end_time'] ?? null,
                         'slot_date'       => $slot['date'],
                         'slot_start_time' => $slot['start_time'],
-                        'slot_end_time'   => $slot['end_time'],
+                        'slot_end_time'   => $slot['end_time'] ?? null,
                         'duration_type'   => $request->duration_type,
 
                         'total_hours'     => $slotHoursTotal,
@@ -594,7 +579,7 @@ class BookingController extends Controller
                         'status'               => 'pending',
                         'payment_method'       => $parentBooking->payment_method,
                     ]);
-                    
+
                     // attachItems() clones the parent's items (same service_ids) onto
                     // the new child. Once they exist, price them the same way as
                     // every other related booking, by service_id.
@@ -620,7 +605,7 @@ class BookingController extends Controller
                 $childBookings[] = $child;
                 $existingChildren->forget($slotIndex);
             }
-            $this->sendNewBookingNotification($child);
+
             // Any leftover children with no matching slot anymore → cancel (never delete)
             foreach ($existingChildren as $leftoverChild) {
                 if (!in_array($leftoverChild->status, ['completed', 'cancelled'])) {
@@ -651,15 +636,18 @@ class BookingController extends Controller
 
             try {
                 foreach ($childBookings as $childBooking) {
-                    // $this->sendBookingStatusNotification($childBooking);
-                    //Mail::send(new BookingCreatedMail($childBooking));
-                    //Calling Socket
-                    broadcast(new BookingStatusUpdated(
-                        $childBooking->id,
-                        $childBooking->status,
-                        $childBooking->provider_id,
-                        $childBooking->user_id
-                    ));
+                    if ($childBooking->wasRecentlyCreated) {
+                        $this->sendNewBookingNotification($childBooking);
+                        Mail::send(new BookingCreatedMail($childBooking));
+                        event(new NewBookingCreated($childBooking->id));
+                    } else {
+                        broadcast(new BookingStatusUpdated(
+                            $childBooking->id,
+                            $childBooking->status,
+                            $childBooking->provider_id,
+                            $childBooking->user_id
+                        ));
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error('Error sending booking update notifications: ' . $e->getMessage());
@@ -1425,7 +1413,7 @@ class BookingController extends Controller
         $request->validate([
             'booking_id' => 'required|exists:bookings,id',
             'action' => 'required|in:pending,confirmed,start_journey, cancelled,in_progress,completed',
-            'otp' => 'required_if:action,in_progress'
+            'otp' => 'required_if:action,in_progress',
         ]);
 
         $user = auth()->user();
@@ -1451,6 +1439,36 @@ class BookingController extends Controller
                     'success' => false,
                     'message' => 'Booking not found'
                 ], 404);
+            }
+            
+            if($booking->service_category_id == '5' && ($request->action == 'completed' || $request->action == 'in_progress')){
+                if (!$request->hasFile('before_images') && !$request->hasFile('after_images')) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please upload images'
+                    ], 404);
+                }else{
+                    if($request->hasFile('before_images')){
+                        foreach ($request->file('before_images') as $file) {
+                            $path = $file->store('booking_images', 's3');
+                            BookingImage::create([
+                                'booking_id' => $request->booking_id,
+                                'type' => 'before',
+                                'path' => $path,
+                            ]);
+                        }
+                    }
+                    if($request->hasFile('after_images')){
+                        foreach ($request->file('after_images') as $file) {
+                            $path = $file->store('booking_images', 's3');
+                            BookingImage::create([
+                                'booking_id' => $request->booking_id,
+                                'type' => 'after',
+                                'path' => $path,
+                            ]);
+                        }
+                    }
+                }
             }
 
             $message = '';

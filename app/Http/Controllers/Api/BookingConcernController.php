@@ -232,8 +232,8 @@ class BookingConcernController extends Controller
             'attachment' => [
                 'nullable',
                 'file',
-                'max:10240',
-                'mimes:jpg,jpeg,png,pdf,doc,docx',
+                // 'max:10240',
+                // 'mimes:jpg,jpeg,png,pdf,doc,docx',
             ],
         ]);
 
@@ -323,8 +323,12 @@ class BookingConcernController extends Controller
                     );
 
                     $concern->files()->create([
-                        'file_name' => $file->getClientOriginalName(),
-                        'file_path' => $path,
+                        'original_name' => $file->getClientOriginalName(),
+                        'path'          => $path,
+                        'mime_type'     => $file->getMimeType(),
+                        'size'          => $file->getSize(),
+                        'is_primary'    => true,
+                        // 'sort_order'    => $fileIndex,
                     ]);
                 }
 

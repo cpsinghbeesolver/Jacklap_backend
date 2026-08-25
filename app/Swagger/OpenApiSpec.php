@@ -19,7 +19,7 @@ namespace App\Swagger;
  * )
  *
  * @OA\Server(
- *     url="https://api.jacklap.ca/api",
+ *     url="http://127.0.0.1:8000/api",
  *     description="Jacklap API Local Server"
  * )
  */

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\MasterServiceController;
 use App\Http\Controllers\Admin\BookingController;
 use App\Http\Controllers\Admin\IdentityTypeController;
 use App\Http\Controllers\Admin\LicenseTypeController;
+use App\Http\Controllers\Admin\LanguagesController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\HomeController;
@@ -169,6 +170,16 @@ Route::middleware(['auth', IsAdmin::class])->group(function () {
     Route::put('license-type/update/{id}', [LicenseTypeController::class, 'update'])->name('update-license-type');
     Route::get('license-type/view/{id}', [LicenseTypeController::class, 'view'])->name('view-license-type');
     Route::delete('license-type/delete/{id}', [LicenseTypeController::class, 'delete'])->name('delete-license-type');
+    
+    Route::get('languages', [LanguagesController::class, 'index'])->name('language');
+    Route::get('languages/create', [LanguagesController::class, 'create'])->name('create-language');
+    Route::post('languages/store', [LanguagesController::class, 'store'])->name('store-language');
+    Route::get('languages/edit/{id}', [LanguagesController::class, 'edit'])->name('edit-language');
+    Route::post('languages/update/{id}', [LanguagesController::class, 'update'])->name('update-language');
+    Route::get('languages/view/{id}', [LanguagesController::class, 'view'])->name('view-language');
+    Route::delete('languages/delete/{id}', [LanguagesController::class, 'delete'])->name('delete-language');
+    
+    
     Route::get('/booking-list',           [BookingController::class, 'index'])->name('booking-list');
     Route::get('/booking/{id}/invoice',     [BookingController::class, 'downloadInvoice'])->name('booking-invoice');
     Route::get('/booking/view/{id}',      [BookingController::class, 'view'])->name('view-booking');

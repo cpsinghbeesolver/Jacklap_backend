@@ -7,6 +7,12 @@
       "slug": "admin-dashboard"
     },
     {
+      "url": "/languages",
+      "icon":"menu-icon tf-icons ri-file-list-line",
+      "name": "Languages",
+      "slug": "language"
+    },
+    {
       "url": "/user-list?role=provider",
       "icon":"menu-icon tf-icons ri-file-list-line",
       "name": "Provider Management",

@@ -240,7 +240,7 @@ class CartController extends Controller
                 if (!empty($fs['date'])) {
                     $frontendSlotMap[$fs['date']] = [
                         'start_time' => $fs['start_time'],
-                        'end_time'   => $fs['end_time'],
+                        'end_time'   => $fs['end_time'] ?? null ,
                     ];
                 }
             }
@@ -469,7 +469,7 @@ class CartController extends Controller
 
                     'service_item_id' => $item['service_item_id'] ?? null,
                     'class_name'      => $item['class_name'] ?? null,
-                    'service_type' => $item['service_type'] ?? 0,
+                    'service_type'    => $item['service_type'] ?? 0,
                     'type'            => $item['type'] ?? null,
                     'subject_type'    => $item['subject_type'] ?? null,
                     'min_people'      => $item['min_people'] ?? null,
