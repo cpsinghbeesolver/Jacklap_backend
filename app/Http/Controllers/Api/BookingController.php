@@ -1496,6 +1496,18 @@ class BookingController extends Controller
                         throw new \Exception('You can start journey for booking only within 2 hours of booking start time');
                     }
 
+                    // Providers can only have one active engagement at a time —
+                    // block starting a new journey if any other booking of
+                    // theirs is already en route or in progress.
+                    $activeBookingExists = Booking::where('provider_id', $user->id)
+                        ->where('id', '!=', $booking->id)
+                        ->whereIn('status', ['start_journey', 'in_progress'])
+                        ->exists();
+
+                    if ($activeBookingExists) {
+                        throw new \Exception('You already have an active booking in progress. Please complete it before starting a new one.');
+                    }
+
                     $booking->otp = rand(100000, 999999);
                     $newStatus = 'start_journey';
                     $message = 'Booking journey started successfully';
