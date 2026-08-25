@@ -621,169 +621,168 @@ class ServiceCategoryController extends Controller
             //         $q2->whereIn('service_id', $request->service_ids);
             //     });
             // })
-            // ->when($request->service_ids, function ($q) use ($request) {
+            ->when($request->service_ids, function ($q) use ($request) {
 
-            //     $serviceIds = $request->service_ids;
+                $serviceIds = $request->service_ids;
 
-            //     $q->whereHas('services', function ($q2) use ($serviceIds) {
-            //         $q2->whereIn('service_id', $serviceIds);
-            //     }, '=', count($serviceIds));
+                $q->whereHas('services', function ($q2) use ($serviceIds) {
+                    $q2->whereIn('service_id', $serviceIds);
+                }, '=', count($serviceIds));
 
-            // })
-            // ->when($request->service_with_class, function ($q) use ($request) {
+            })
+            ->when($request->service_with_class, function ($q) use ($request) {
 
-            //     foreach ($request->service_with_class as $filter) {
+                foreach ($request->service_with_class as $filter) {
             
-            //         $serviceId   = $filter['service_id'];
-            //         $subjectType = $filter['subject_type'] ?? null;
+                    $serviceId   = $filter['service_id'];
+                    $subjectType = $filter['subject_type'] ?? null;
             
-            //         // class_names only valid for academic (subject_type = 1)
-            //         $classNames  = ($subjectType == 2) ? null : ($filter['class_names'] ?? null);
+                    // class_names only valid for academic (subject_type = 1)
+                    $classNames  = ($subjectType == 2) ? null : ($filter['class_names'] ?? null);
             
-            //         $q->whereHas('services', function ($q2) use ($serviceId, $classNames, $subjectType) {
+                    $q->whereHas('services', function ($q2) use ($serviceId, $classNames, $subjectType) {
             
-            //             $q2->where('service_id', $serviceId);
+                        $q2->where('service_id', $serviceId);
             
-            //             if (!is_null($subjectType)) {
-            //                 $q2->where('subject_type', $subjectType);
-            //             }
+                        if (!is_null($subjectType)) {
+                            $q2->where('subject_type', $subjectType);
+                        }
             
-            //             if (!empty($classNames)) {
-            //                 $q2->whereIn('class_name', $classNames);
-            //             }
-            //         });
-            //     }
-            // })
-            // ->when($request->service_with_item, function ($q) use ($request) {
+                        if (!empty($classNames)) {
+                            $q2->whereIn('class_name', $classNames);
+                        }
+                    });
+                }
+            })
+            ->when($request->service_with_item, function ($q) use ($request) {
 
-            //     foreach ($request->service_with_item as $filter) {
+                foreach ($request->service_with_item as $filter) {
             
-            //         $serviceId = $filter['service_id'];
-            //         $itemIds   = $filter['item_ids'] ?? null;
+                    $serviceId = $filter['service_id'];
+                    $itemIds   = $filter['item_ids'] ?? null;
             
-            //         $q->whereHas('services', function ($q2) use ($serviceId, $itemIds) {
+                    $q->whereHas('services', function ($q2) use ($serviceId, $itemIds) {
             
-            //             $q2->where('service_id', $serviceId);
+                        $q2->where('service_id', $serviceId);
             
-            //             if (!empty($itemIds)) {
-            //                 $q2->whereIn('service_item_id', $itemIds);
-            //             }
-            //         });
-            //     }
-            // })
-            // ->when($request->license_type_ids, function ($q) use ($request) {
+                        if (!empty($itemIds)) {
+                            $q2->whereIn('service_item_id', $itemIds);
+                        }
+                    });
+                }
+            })
+            ->when($request->license_type_ids, function ($q) use ($request) {
 
-            //     $licenseTypeIds = $request->license_type_ids;
+                $licenseTypeIds = $request->license_type_ids;
             
-            //     $q->whereHas('licenseTypes', function ($q2) use ($licenseTypeIds) {
+                $q->whereHas('licenseTypes', function ($q2) use ($licenseTypeIds) {
             
-            //         $q2->whereIn('license_type_id', $licenseTypeIds);
+                    $q2->whereIn('license_type_id', $licenseTypeIds);
             
-            //     });
+                });
             
-            // })
-            // ->when($request->material_type_ids, function ($q) use ($request) {
+            })
+            ->when($request->material_type_ids, function ($q) use ($request) {
 
-            //     $materialIds = $request->material_type_ids;
+                $materialIds = $request->material_type_ids;
             
-            //     $q->whereHas('providerMaterials', function ($q2) use ($materialIds) {
+                $q->whereHas('providerMaterials', function ($q2) use ($materialIds) {
             
-            //         $q2->whereIn('material_type_id', $materialIds);
+                    $q2->whereIn('material_type_id', $materialIds);
             
-            //     });
+                });
             
-            // })
-            // ->when($request->service_usecase_ids, function ($q) use ($request) {
+            })
+            ->when($request->service_usecase_ids, function ($q) use ($request) {
 
-            //     $usecaseIds = $request->service_usecase_ids;
+                $usecaseIds = $request->service_usecase_ids;
             
-            //     $q->whereHas('serviceUsecases', function ($q2) use ($usecaseIds) {
+                $q->whereHas('serviceUsecases', function ($q2) use ($usecaseIds) {
             
-            //         $q2->whereIn('service_usecase_id', $usecaseIds);
+                    $q2->whereIn('service_usecase_id', $usecaseIds);
             
-            //     });
+                });
             
-            // })
-            // ->when($request->language_ids, function ($q) use ($request) {
-            //     $q->whereHas('languages', function ($q2) use ($request) {
-            //         $q2->whereIn('language_id', $request->language_ids);
-            //     });
-            // })->when($request->dates, function ($q) use ($request) {
+            })
+            ->when($request->language_ids, function ($q) use ($request) {
+                $q->whereHas('languages', function ($q2) use ($request) {
+                    $q2->whereIn('language_id', $request->language_ids);
+                });
+            })->when($request->dates, function ($q) use ($request) {
 
-            //     $dates      = $request->dates;
-            //     $matchType  = $request->dates_match ?? 'all'; // 'all' = provider must be free at every listed slot
-            //     $duration   = (int) ($request->slot_duration ?? 60);
+                $dates      = $request->dates;
+                $matchType  = $request->dates_match ?? 'all'; // 'all' = provider must be free at every listed slot
+                $duration   = (int) ($request->slot_duration ?? 60);
 
-            //     $applySlotConstraint = function ($subQ, $day, $time) use ($duration) {
-            //         // Must have an active weekly availability slot covering this day...
-            //         $subQ->whereHas('availabilitySlots', function ($aq) use ($day, $time) {
-            //             $aq->where('day', $day)->where('status', 1);
+                $applySlotConstraint = function ($subQ, $day, $time) use ($duration) {
+                    // Must have an active weekly availability slot covering this day...
+                    $subQ->whereHas('availabilitySlots', function ($aq) use ($day, $time) {
+                        $aq->where('day', $day)->where('status', 1);
 
-            //             if ($time) {
-            //                 $aq->where('opening_time', '<=', $time)
-            //                 ->where('closing_time', '>=', $time);
-            //             }
-            //         });
+                        if ($time) {
+                            $aq->where('opening_time', '<=', $time)
+                            ->where('closing_time', '>=', $time);
+                        }
+                    });
 
-            //         // ...and must not have a confirmed/in_progress booking overlapping that slot.
-            //         if ($time) {
-            //             $subQ->whereDoesntHave('providerBookings', function ($bq) use ($time, $duration) {
-            //                 $bq->whereIn('status', ['confirmed', 'in_progress'])
-            //                     ->whereRaw(
-            //                         'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE) AND end_datetime > ?',
-            //                         [$time, $duration, $time]
-            //                     );
-            //             });
-            //         }
-            //     };
+                    // ...and must not have a confirmed/in_progress booking overlapping that slot.
+                    if ($time) {
+                        $subQ->whereDoesntHave('providerBookings', function ($bq) use ($time, $duration) {
+                            $bq->whereIn('status', ['confirmed', 'in_progress'])
+                                ->whereRaw(
+                                    'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE) AND end_datetime > ?',
+                                    [$time, $duration, $time]
+                                );
+                        });
+                    }
+                };
 
-            //     $q->where(function ($outer) use ($dates, $matchType, $applySlotConstraint) {
-            //         foreach ($dates as $entry) {
-            //             $day  = strtolower(\Carbon\Carbon::parse($entry['date'])->format('l'));
-            //             $time = $entry['time'] ?? null;
+                $q->where(function ($outer) use ($dates, $matchType, $applySlotConstraint) {
+                    foreach ($dates as $entry) {
+                        $day  = strtolower(\Carbon\Carbon::parse($entry['date'])->format('l'));
+                        $time = $entry['time'] ?? null;
 
-            //             // For "time" comparisons above we need a full datetime, not a
-            //             // bare time, since bookings are stored as start_datetime/end_datetime.
-            //             $timeForQuery = $time ? $entry['date'] . ' ' . $time . ':00' : null;
+                        // For "time" comparisons above we need a full datetime, not a
+                        // bare time, since bookings are stored as start_datetime/end_datetime.
+                        $timeForQuery = $time ? $entry['date'] . ' ' . $time . ':00' : null;
 
-            //             if ($matchType === 'any') {
-            //                 $outer->orWhere(function ($inner) use ($applySlotConstraint, $day, $timeForQuery) {
-            //                     $applySlotConstraint($inner, $day, $timeForQuery);
-            //                 });
-            //             } else {
-            //                 $applySlotConstraint($outer, $day, $timeForQuery);
-            //             }
-            //         }
-            //     });
-            // });
-            ;
+                        if ($matchType === 'any') {
+                            $outer->orWhere(function ($inner) use ($applySlotConstraint, $day, $timeForQuery) {
+                                $applySlotConstraint($inner, $day, $timeForQuery);
+                            });
+                        } else {
+                            $applySlotConstraint($outer, $day, $timeForQuery);
+                        }
+                    }
+                });
+            });
 
         // Apply distance logic ONLY if lat & long present
-        // if ($request->filled('latitude') && $request->filled('longitude')) {
+        if ($request->filled('latitude') && $request->filled('longitude')) {
 
-        //     $lat = $request->latitude;
-        //     $lng = $request->longitude;
+            $lat = $request->latitude;
+            $lng = $request->longitude;
 
-        //     $distanceQuery = "ROUND((6371 * acos(
-        //         cos(radians($lat)) 
-        //         * cos(radians(users.latitude)) 
-        //         * cos(radians(users.longitude) - radians($lng)) 
-        //         + sin(radians($lat)) 
-        //         * sin(radians(users.latitude))
-        //     )), 2)";
+            $distanceQuery = "ROUND((6371 * acos(
+                cos(radians($lat)) 
+                * cos(radians(users.latitude)) 
+                * cos(radians(users.longitude) - radians($lng)) 
+                + sin(radians($lat)) 
+                * sin(radians(users.latitude))
+            )), 2)";
 
-        //     $query->select('*')
-        //         ->selectRaw("$distanceQuery AS distance")
-        //         ->whereNotNull('latitude')
-        //         ->whereNotNull('longitude')
-        //         ->having('distance', '<=', 100)
-        //         ->orderBy('distance', 'asc');
+            $query->select('*')
+                ->selectRaw("$distanceQuery AS distance")
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->having('distance', '<=', 100)
+                ->orderBy('distance', 'asc');
 
-        // } else {
-        //     $query->select('*')
-        //     ->selectRaw('NULL as distance')
-        //     ->latest();
-        // }
+        } else {
+            $query->select('*')
+            ->selectRaw('NULL as distance')
+            ->latest();
+        }
 
         $users = $query->paginate($perPage);
 
