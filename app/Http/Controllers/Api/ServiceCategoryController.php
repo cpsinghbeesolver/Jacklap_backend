@@ -616,11 +616,11 @@ class ServiceCategoryController extends Controller
                     });
                 }
             })
-            ->when($request->service_ids, function ($q) use ($request) {
-                $q->whereHas('services', function ($q2) use ($request) {
-                    $q2->whereIn('service_id', $request->service_ids);
-                });
-            })
+            // ->when($request->service_ids, function ($q) use ($request) {
+            //     $q->whereHas('services', function ($q2) use ($request) {
+            //         $q2->whereIn('service_id', $request->service_ids);
+            //     });
+            // })
             ->when($request->service_ids, function ($q) use ($request) {
 
                 $serviceIds = $request->service_ids;
