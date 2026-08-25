@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\LicenseTypeController;
 use App\Http\Controllers\Admin\LanguagesController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
 use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\user\HomeController as UserHomeController;
 use App\Http\Controllers\provider\HomeController as ProviderHomeController;
@@ -123,6 +124,8 @@ Route::middleware(['auth', IsAdmin::class])->group(function () {
     Route::get('/provider-management/view/{id}', [ProviderList::class, 'viewUser'])->name('view-user');
     
     
+    Route::get('settings', [SettingsController::class, 'index'])->name('settings');
+    Route::post('settings', [SettingsController::class, 'update'])->name('save-settings');
     Route::get('/pages/account-settings-account', [AccountSettingsAccount::class, 'index'])->name('pages-account-settings-account');
     Route::get('/pages/account-settings-notifications', [AccountSettingsNotifications::class, 'index'])->name('pages-account-settings-notifications');
     Route::get('/pages/account-settings-connections', [AccountSettingsConnections::class, 'index'])->name('pages-account-settings-connections');

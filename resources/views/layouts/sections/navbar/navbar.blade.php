@@ -84,7 +84,7 @@
                 </a>
               </li>
               <li>
-                <a class="dropdown-item" href="javascript:void(0);">
+                <a class="dropdown-item" href="{{ route('settings') }}">
                   <i class='ri-settings-4-line ri-22px me-2'></i>
                   <span class="align-middle">Settings</span>
                 </a>

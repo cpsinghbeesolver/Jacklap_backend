@@ -84,7 +84,6 @@ class LanguagesController extends Controller
     {
         $request->validate([
             'name' => 'required|max:255',
-            'description' => 'nullable|string',
         ]);
 
         $language = Language::findOrFail($id);
