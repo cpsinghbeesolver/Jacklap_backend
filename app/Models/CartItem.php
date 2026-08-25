@@ -52,7 +52,7 @@ class CartItem extends Model
             'id',                 // FK on services table matching cart_items.service_id
             'id',                 // FK on master_services table
             'service_id',         // local key on cart_items
-            'master_service_id'   // local key on services (confirm this column name)
+            'service_id'   // local key on services (confirm this column name)
         );
     }
 
