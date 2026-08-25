@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
 class CartItem extends Model
 {
     protected $fillable = [
@@ -41,19 +40,7 @@ class CartItem extends Model
 
     public function service()
     {
-        return $this->belongsTo(Service::class, 'service_id');
-    }
-
-    public function masterService(): \Illuminate\Database\Eloquent\Relations\HasOneThrough
-    {
-        return $this->hasOneThrough(
-            MasterService::class,
-            Service::class,
-            'id',                 // FK on services table matching cart_items.service_id
-            'id',                 // FK on master_services table
-            'service_id',         // local key on cart_items
-            'service_id'   // local key on services (confirm this column name)
-        );
+        return $this->belongsTo(MasterService::class, 'service_id');
     }
 
     public function addonService()

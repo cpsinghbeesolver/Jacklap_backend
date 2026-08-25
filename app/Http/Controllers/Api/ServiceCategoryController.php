@@ -899,7 +899,7 @@ class ServiceCategoryController extends Controller
 
                 $service->items = $services
                     ->where('service_id', $service->service_id)
-                    ->where('subject_type', $service->subject_type)
+                    // ->where('subject_type', $service->subject_type)
                     ->map(function ($item) {
                         return [
                             'id' => $item->service_item_id,
