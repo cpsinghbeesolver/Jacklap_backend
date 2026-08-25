@@ -516,7 +516,7 @@ class CartController extends Controller
         // 12. LOAD RELATIONS & RETURN
         // ─────────────────────────────────────────────
         $cart->load([
-            'items',
+            'items.masterService',
             'addonItems',
             'address:id,address_type,type_name',
             'provider:id,name,image,gender',
@@ -554,7 +554,7 @@ class CartController extends Controller
         $user = auth()->user();
 
         $cart = Cart::with([
-            'items',
+            'items.masterService',
             'addonItems',
             'address:id,address_type,type_name',
             'provider:id,name,image,gender'

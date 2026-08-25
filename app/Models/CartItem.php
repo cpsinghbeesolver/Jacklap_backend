@@ -44,6 +44,18 @@ class CartItem extends Model
         return $this->belongsTo(Service::class, 'service_id');
     }
 
+    public function masterService(): \Illuminate\Database\Eloquent\Relations\HasOneThrough
+    {
+        return $this->hasOneThrough(
+            MasterService::class,
+            Service::class,
+            'id',                 // FK on services table matching cart_items.service_id
+            'id',                 // FK on master_services table
+            'service_id',         // local key on cart_items
+            'master_service_id'   // local key on services (confirm this column name)
+        );
+    }
+
     public function addonService()
     {
         return $this->belongsTo(AddonService::class, 'service_id');
