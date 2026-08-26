@@ -38,15 +38,15 @@ class StoreMediaRequestV2 extends FormRequest
             'documents'                    => ['nullable', 'array'],
             'documents.*.identity_type_id' => ['required_with:documents', 'integer', 'exists:identity_types,id'],
             'documents.*.files'            => ['nullable', 'array'],
-            'documents.*.files.*'          => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'documents.*.files.*'          => ['file', 'mimes:jpg,jpeg,png,pdf'],
             'documents.*.file_ids'         => ['nullable', 'array'],
             'documents.*.file_ids.*'       => ['integer', 'exists:files,id'],
 
             'certificate_id' => ['nullable', 'integer', 'exists:identity_types,id'],
             'certificates'   => ['nullable', 'array'],
-            'certificates.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'certificates.*' => ['file', 'mimes:jpg,jpeg,png,pdf'],
 
-            'profile_photo'  => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
+            'profile_photo'  => ['nullable', 'image', 'mimes:jpg,jpeg,png'],
         ];
     }
 

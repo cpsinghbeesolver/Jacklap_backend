@@ -343,7 +343,7 @@ class ChatController extends Controller
     {
         $request->validate([
             'conversation_id' => 'required|exists:conversations,id',
-            'file' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:10240'
+            'file' => 'required|file'
         ]);
 
         $file = $request->file('file');
