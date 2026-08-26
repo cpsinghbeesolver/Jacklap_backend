@@ -1762,6 +1762,7 @@ class ServiceCategoryController extends Controller
             ->select([
                 'booking_items.service_id',
                 'booking_items.service_type',
+                DB::raw('MAX(bookings.service_category_id) as service_category_id'),
                 DB::raw('MAX(booking_items.service_name) as service_name'),
                 DB::raw('COUNT(*) as booking_count'),
                 DB::raw('SUM(booking_items.quantity) as total_quantity'),
