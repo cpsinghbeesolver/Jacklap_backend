@@ -131,7 +131,8 @@ class User extends Authenticatable
 
   public function bookings()
   {
-    return $this->hasMany(Booking::class, 'user_id');
+    return $this->hasMany(Booking::class, 'user_id')->whereNotNull('parent_booking_id')
+        ->where('parent_booking_id', '!=', '');
   }
 
   // Bookings where user is PROVIDER
