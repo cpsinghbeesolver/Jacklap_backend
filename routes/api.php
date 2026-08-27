@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\UserDetailsController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\SettingsController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\EnquiryController;
 use Illuminate\Support\Facades\Route;
@@ -135,6 +136,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/booking/{id}/payment/confirm',          [PaymentController::class, 'confirmIntent']);
     Route::post('/submit-review', [ReviewController::class, 'submitReview']);
     Route::get('/get-review', [ReviewController::class, 'getReview']);
+    Route::get('/get-settings', [SettingsController::class, 'index']);
     // User
     Route::get('/enquiries', [
         EnquiryController::class,
