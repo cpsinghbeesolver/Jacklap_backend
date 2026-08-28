@@ -19,7 +19,9 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\ContactUsController;
-use App\Http\Controllers\Api\BookingConcernController;
+use App\Http\Controllers\Api\BookinsgConcernController;
+use App\Http\Controllers\Api\StripeConnectController;
+use App\Http\Controllers\Api\StripeWebhookController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -184,6 +186,50 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/account/deactivate', [UserController::class, 'deactivate']);
     Route::get('/provider/background-check-link', [UserController::class, 'backgroundCheckLink']);
 });
+
+
+//Stripe connect
+Route::prefix('v2')->group(function () {
+
+    Route::middleware('auth:sanctum')->group(function () {
+
+        Route::post(
+            '/stripe/connect/account',
+            [StripeConnectController::class, 'createAccount']
+        );
+
+        Route::post(
+            '/stripe/connect/onboarding-link',
+            [StripeConnectController::class, 'onboardingLink']
+        );
+
+        Route::get(
+            '/stripe/connect/status',
+            [StripeConnectController::class, 'status']
+        );
+
+        Route::post(
+            '/stripe/connect/payment-intent',
+            [StripeConnectController::class, 'createPaymentIntent']
+        );
+    });
+
+    Route::get(
+        '/stripe/connect/refresh',
+        [StripeConnectController::class, 'refresh']
+    )->name('stripe.connect.refresh');
+
+    Route::get(
+        '/stripe/connect/return',
+        [StripeConnectController::class, 'return']
+    )->name('stripe.connect.return');
+
+    Route::post(
+        '/stripe/webhook',
+        [StripeWebhookController::class, 'handle']
+    );
+});
+
 
 Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
     Route::get('/', [NotificationController::class, 'notificationList']);
