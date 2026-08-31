@@ -45,6 +45,10 @@ class User extends Authenticatable
     'deactivated_at',
     'deactivated_by',
     'deactivation_reason',
+    'stripe_account_id',
+    'stripe_onboarding_complete',
+    'stripe_payouts_enabled',
+    'stripe_charges_enabled'
   ];
 
   /**
