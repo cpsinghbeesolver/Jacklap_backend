@@ -206,7 +206,22 @@ class StripeConnectController extends Controller
             'use_case' => [
                 'type' => 'account_onboarding',
                 'account_onboarding' => [
-                    'configurations' => ['merchant', 'recipient'],
+                    'configurations' => [
+                        'merchant',
+                        'recipient',
+                    ],
+
+                    /*
+                    * IMPORTANT:
+                    *
+                    * Collect all requirements that are currently
+                    * required, including requirements that may become
+                    * required later.
+                    */
+                    'collection_options' => [
+                        'fields' => 'eventually_due',
+                        'future_requirements' => 'include',
+                    ],
                     'refresh_url' => URL::temporarySignedRoute(
                         'stripe.connect.refresh',
                         now()->addHours(2),
@@ -298,32 +313,82 @@ class StripeConnectController extends Controller
             ], 404);
         }
 
-        $account = $this->stripe->v2->core->accounts->retrieve(
-            $user->stripe_account_id,
-            [
-                'include' => [
-                    'configuration.merchant',
-                    'configuration.recipient',
-                    'requirements',
+        try {
+            $account = $this->stripe->v2->core->accounts->retrieve(
+                $user->stripe_account_id,
+                [
+                    'include' => [
+                        'configuration.merchant',
+                        'configuration.recipient',
+                        'requirements',
+                        'identity',
+                    ],
+                ]
+            );
+
+            $data = $account->toArray();
+
+            $cardPaymentsStatus = data_get(
+                $data,
+                'configuration.merchant.capabilities.card_payments.status'
+            );
+
+            $stripeTransfersStatus = data_get(
+                $data,
+                'configuration.recipient.capabilities.stripe_balance.stripe_transfers.status'
+            );
+
+            $payoutsStatus = data_get(
+                $data,
+                'configuration.merchant.capabilities.stripe_balance.payouts.status'
+            );
+
+            $chargesEnabled = $cardPaymentsStatus === 'active';
+
+            $payoutsEnabled =
+                $payoutsStatus === 'active' &&
+                $stripeTransfersStatus === 'active';
+
+            $onboardingComplete =
+                $chargesEnabled &&
+                $payoutsEnabled;
+
+            $user->update([
+                'stripe_onboarding_complete' => $onboardingComplete,
+                'stripe_charges_enabled' => $chargesEnabled,
+                'stripe_payouts_enabled' => $payoutsEnabled,
+            ]);
+
+            return response()->json([
+                'stripe_account_id' => $account->id,
+
+                'onboarding_complete' => $onboardingComplete,
+
+                'charges_enabled' => $chargesEnabled,
+
+                'payouts_enabled' => $payoutsEnabled,
+
+                'capabilities' => [
+                    'card_payments' => $cardPaymentsStatus,
+                    'stripe_transfers' => $stripeTransfersStatus,
+                    'payouts' => $payoutsStatus,
                 ],
-            ]
-        );
 
-        [$chargesEnabled, $payoutsEnabled, $detailsSubmitted] = $this->extractStatusFlags($account);
+                'requirements' => $account->requirements ?? null,
+            ]);
 
-        $user->update([
-            'stripe_onboarding_complete' => $detailsSubmitted,
-            'stripe_charges_enabled' => $chargesEnabled,
-            'stripe_payouts_enabled' => $payoutsEnabled,
-        ]);
+        } catch (\Throwable $e) {
 
-        return response()->json([
-            'stripe_account_id' => $account->id,
-            'details_submitted' => $detailsSubmitted,
-            'charges_enabled' => $chargesEnabled,
-            'payouts_enabled' => $payoutsEnabled,
-            'requirements' => $account->requirements ?? null,
-        ]);
+            \Log::error('Stripe Connect status failed', [
+                'user_id' => $user->id,
+                'stripe_account_id' => $user->stripe_account_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Unable to retrieve Stripe account status.',
+            ], 500);
+        }
     }
 
     /**
@@ -600,35 +665,119 @@ class StripeConnectController extends Controller
      *     )
      * )
      */
+    // public function return(Request $request)
+    // {
+    //     if (!$request->hasValidSignature()) {
+    //         abort(403, 'Invalid or expired link.');
+    //     }
+
+    //     $user = User::findOrFail($request->query('user'));
+
+    //     $account = $this->stripe->v2->core->accounts->retrieve(
+    //         $user->stripe_account_id,
+    //         [
+    //             'include' => [
+    //                 'configuration.merchant',
+    //                 'configuration.recipient',
+    //             ],
+    //         ]
+    //     );
+
+    //     [$chargesEnabled, $payoutsEnabled, $detailsSubmitted] = $this->extractStatusFlags($account);
+
+    //     $user->update([
+    //         'stripe_onboarding_complete' => $detailsSubmitted,
+    //         'stripe_charges_enabled' => $chargesEnabled,
+    //         'stripe_payouts_enabled' => $payoutsEnabled,
+    //     ]);
+
+    //     // Redirect to your frontend rather than returning raw JSON to a browser.
+    //     $status = ($chargesEnabled && $payoutsEnabled) ? 'complete' : 'incomplete';
+    //     return redirect(config('app.frontend_url') . '/stripe/onboarding-' . $status);
+    // }
     public function return(Request $request)
     {
         if (!$request->hasValidSignature()) {
-            abort(403, 'Invalid or expired link.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired link.',
+            ], 403);
         }
 
         $user = User::findOrFail($request->query('user'));
 
-        $account = $this->stripe->v2->core->accounts->retrieve(
-            $user->stripe_account_id,
-            [
-                'include' => [
-                    'configuration.merchant',
-                    'configuration.recipient',
-                ],
-            ]
-        );
+        if (!$user->stripe_account_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stripe account not found.',
+                'status' => 'incomplete',
+                'onboarding_complete' => false,
+                'charges_enabled' => false,
+                'payouts_enabled' => false,
+            ]);
+        }
 
-        [$chargesEnabled, $payoutsEnabled, $detailsSubmitted] = $this->extractStatusFlags($account);
+        try {
+            $account = $this->stripe->v2->core->accounts->retrieve(
+                $user->stripe_account_id,
+                [
+                    'include' => [
+                        'configuration.merchant',
+                        'configuration.recipient',
+                        'requirements',
+                        'identity',
+                    ],
+                ]
+            );
 
-        $user->update([
-            'stripe_onboarding_complete' => $detailsSubmitted,
-            'stripe_charges_enabled' => $chargesEnabled,
-            'stripe_payouts_enabled' => $payoutsEnabled,
-        ]);
+            [$chargesEnabled, $payoutsEnabled, $detailsSubmitted] =
+                $this->extractStatusFlags($account);
 
-        // Redirect to your frontend rather than returning raw JSON to a browser.
-        $status = ($chargesEnabled && $payoutsEnabled) ? 'complete' : 'incomplete';
-        return redirect(config('app.frontend_url') . '/stripe/onboarding-' . $status);
+            $onboardingComplete =
+                $chargesEnabled &&
+                $payoutsEnabled;
+
+            $user->update([
+                'stripe_onboarding_complete' => $onboardingComplete,
+                'stripe_charges_enabled' => $chargesEnabled,
+                'stripe_payouts_enabled' => $payoutsEnabled,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $onboardingComplete
+                    ? 'Stripe onboarding completed successfully.'
+                    : 'Stripe onboarding is incomplete.',
+
+                'status' => $onboardingComplete
+                    ? 'complete'
+                    : 'incomplete',
+
+                'onboarding_complete' => $onboardingComplete,
+                'charges_enabled' => $chargesEnabled,
+                'payouts_enabled' => $payoutsEnabled,
+                'details_submitted' => $detailsSubmitted,
+
+                'stripe_account_id' => $user->stripe_account_id,
+            ]);
+
+        } catch (\Throwable $e) {
+
+            \Log::error('Stripe Connect onboarding return failed', [
+                'user_id' => $user->id,
+                'stripe_account_id' => $user->stripe_account_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to verify Stripe onboarding status.',
+                'status' => 'incomplete',
+                'onboarding_complete' => false,
+                'charges_enabled' => false,
+                'payouts_enabled' => false,
+            ], 500);
+        }
     }
 
     /**
@@ -639,19 +788,40 @@ class StripeConnectController extends Controller
      */
     private function extractStatusFlags($account): array
     {
-        $merchant = $account->configuration->merchant ?? null;
-        $recipient = $account->configuration->recipient ?? null;
+        $data = $account->toArray();
 
-        $chargesEnabled = $merchant
-            && ($merchant->capabilities->card_payments->status ?? null) === 'active';
+        // Merchant -> card payments
+        $cardPaymentsStatus = data_get(
+            $data,
+            'configuration.merchant.capabilities.card_payments.status'
+        );
 
-        $payoutsEnabled = $recipient
-            && ($recipient->capabilities->stripe_balance->stripe_transfers->status ?? null) === 'active';
+        // Merchant -> payouts
+        $payoutsStatus = data_get(
+            $data,
+            'configuration.merchant.capabilities.stripe_balance.payouts.status'
+        );
 
-        // v2 doesn't have a single top-level details_submitted flag the same
-        // way v1 did — approximate it as "no outstanding requirements".
-        $detailsSubmitted = empty($account->requirements->entries ?? []);
+        // Recipient -> transfers
+        $stripeTransfersStatus = data_get(
+            $data,
+            'configuration.recipient.capabilities.stripe_balance.stripe_transfers.status'
+        );
 
-        return [(bool) $chargesEnabled, (bool) $payoutsEnabled, (bool) $detailsSubmitted];
+        $chargesEnabled = $cardPaymentsStatus === 'active';
+
+        $payoutsEnabled =
+            $payoutsStatus === 'active' &&
+            $stripeTransfersStatus === 'active';
+
+        $detailsSubmitted =
+            $chargesEnabled &&
+            $payoutsEnabled;
+
+        return [
+            (bool) $chargesEnabled,
+            (bool) $payoutsEnabled,
+            (bool) $detailsSubmitted,
+        ];
     }
 }

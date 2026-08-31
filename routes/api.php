@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\GoogleAuthController;
 use App\Http\Controllers\Api\ContactUsController;
-use App\Http\Controllers\Api\BookinsgConcernController;
+use App\Http\Controllers\Api\BookingConcernController;
 use App\Http\Controllers\Api\StripeConnectController;
 use App\Http\Controllers\Api\StripeWebhookController;
 /*
