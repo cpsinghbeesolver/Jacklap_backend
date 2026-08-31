@@ -188,48 +188,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 
-//Stripe connect
 Route::prefix('v2')->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
-
-        Route::post(
-            '/stripe/connect/account',
-            [StripeConnectController::class, 'createAccount']
-        );
-
-        Route::post(
-            '/stripe/connect/onboarding-link',
-            [StripeConnectController::class, 'onboardingLink']
-        );
-
-        Route::get(
-            '/stripe/connect/status',
-            [StripeConnectController::class, 'status']
-        );
-
-        Route::post(
-            '/stripe/connect/payment-intent',
-            [StripeConnectController::class, 'createPaymentIntent']
-        );
+        Route::post('/stripe/connect/account', [StripeConnectController::class, 'createAccount']);
+        Route::post('/stripe/connect/onboarding-link', [StripeConnectController::class, 'onboardingLink']);
+        Route::get('/stripe/connect/status', [StripeConnectController::class, 'status']);
+        Route::post('/stripe/connect/payment-intent', [StripeConnectController::class, 'createPaymentIntent']);
     });
 
-    Route::get(
-        '/stripe/connect/refresh',
-        [StripeConnectController::class, 'refresh']
-    )->name('stripe.connect.refresh');
+    // NOT behind auth:sanctum — hit by raw browser redirects from Stripe
+    Route::get('/stripe/connect/refresh', [StripeConnectController::class, 'refresh'])
+        ->name('stripe.connect.refresh');
 
-    Route::get(
-        '/stripe/connect/return',
-        [StripeConnectController::class, 'return']
-    )->name('stripe.connect.return');
+    Route::get('/stripe/connect/return', [StripeConnectController::class, 'return'])
+        ->name('stripe.connect.return');
 
-    Route::post(
-        '/stripe/webhook',
-        [StripeWebhookController::class, 'handle']
-    );
+    Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
 });
-
 
 Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
     Route::get('/', [NotificationController::class, 'notificationList']);

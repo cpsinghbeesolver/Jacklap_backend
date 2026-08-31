@@ -5,10 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Stripe\StripeClient;
-use Stripe\Webhook;
-use UnexpectedValueException;
-use Stripe\Exception\SignatureVerificationException;
 
 class StripeConnectController extends Controller
 {
@@ -22,32 +20,9 @@ class StripeConnectController extends Controller
     }
 
     /**
-         * @OA\Post(
-         *     path="/v2/stripe/connect/account",
-         *     tags={"Stripe Connect"},
-         *     summary="Create Stripe connected account",
-         *     description="Creates a Stripe Express connected account for the authenticated user.",
-         *     security={{ "bearerAuth": {} }},
-         *
-         *     @OA\Response(
-         *         response=201,
-         *         description="Stripe connected account created successfully",
-         *         @OA\JsonContent(
-         *             @OA\Property(
-         *                 property="stripe_account_id",
-         *                 type="string",
-         *                 example="acct_123456789"
-         *             )
-         *         )
-         *     ),
-         *
-         *     @OA\Response(
-         *         response=200,
-         *         description="Stripe account already exists"
-         *     )
-         * )
-         */
-        
+     * Create a Stripe v2 Account with merchant + recipient configurations
+     * (replaces the v1 `type=express` account).
+     */
     public function createAccount(Request $request)
     {
         $user = $request->user();
@@ -59,9 +34,41 @@ class StripeConnectController extends Controller
             ]);
         }
 
-        $account = $this->stripe->accounts->create([
-            'type' => 'express',
-            'email' => $user->email,
+        $account = $this->stripe->v2->core->accounts->create([
+            'contact_email' => $user->email,
+            'display_name' => $user->name,
+            'identity' => [
+                'country' => 'us', // TODO: make dynamic per vendor if needed
+                'entity_type' => 'individual',
+            ],
+            'configuration' => [
+                'merchant' => [
+                    'capabilities' => [
+                        'card_payments' => ['requested' => true],
+                    ],
+                ],
+                'recipient' => [
+                    'capabilities' => [
+                        'stripe_balance' => [
+                            'stripe_transfers' => ['requested' => true],
+                        ],
+                    ],
+                ],
+            ],
+            'defaults' => [
+                'currency' => config('services.stripe.currency'),
+                'responsibilities' => [
+                    'fees_collector' => 'stripe',
+                    'losses_collector' => 'stripe',
+                ],
+                'locales' => ['en-US'],
+            ],
+            'include' => [
+                'configuration.merchant',
+                'configuration.recipient',
+                'identity',
+                'requirements',
+            ],
         ]);
 
         $user->update([
@@ -75,32 +82,10 @@ class StripeConnectController extends Controller
     }
 
     /**
-     * @OA\Post(
-     *     path="/stripe/connect/onboarding-link",
-     *     tags={"Stripe Connect"},
-     *     summary="Generate Stripe onboarding link",
-     *     description="Creates a Stripe onboarding URL for the authenticated user's connected account.",
-     *     security={{ "bearerAuth": {} }},
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Onboarding link created",
-     *         @OA\JsonContent(
-     *             @OA\Property(
-     *                 property="url",
-     *                 type="string",
-     *                 example="https://connect.stripe.com/setup/..."
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=404,
-     *         description="Stripe account not found"
-     *     )
-     * )
+     * Generate an onboarding link (Account Links v2).
+     * refresh_url/return_url are SIGNED because Stripe redirects the
+     * user's raw browser here — there is no Bearer token on that request.
      */
-
     public function onboardingLink(Request $request)
     {
         $user = $request->user();
@@ -111,16 +96,24 @@ class StripeConnectController extends Controller
             ], 404);
         }
 
-        $stripe = new StripeClient(config('services.stripe.secret'));
-
-        $accountLink = $stripe->accountLinks->create([
+        $accountLink = $this->stripe->v2->core->accountLinks->create([
             'account' => $user->stripe_account_id,
-
-            'refresh_url' => route('stripe.connect.refresh'),
-
-            'return_url' => route('stripe.connect.return'),
-
-            'type' => 'account_onboarding',
+            'use_case' => [
+                'type' => 'account_onboarding',
+                'account_onboarding' => [
+                    'configurations' => ['merchant', 'recipient'],
+                    'refresh_url' => URL::temporarySignedRoute(
+                        'stripe.connect.refresh',
+                        now()->addHours(2),
+                        ['user' => $user->id]
+                    ),
+                    'return_url' => URL::temporarySignedRoute(
+                        'stripe.connect.return',
+                        now()->addHours(2),
+                        ['user' => $user->id]
+                    ),
+                ],
+            ],
         ]);
 
         return response()->json([
@@ -128,47 +121,8 @@ class StripeConnectController extends Controller
         ]);
     }
 
-
-     /**
-     * @OA\Get(
-     *     path="/stripe/connect/status",
-     *     tags={"Stripe Connect"},
-     *     summary="Get Stripe Connect account status",
-     *     description="Returns the onboarding, charges and payouts status of the authenticated user's Stripe account.",
-     *     security={{ "bearerAuth": {} }},
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Stripe account status",
-     *         @OA\JsonContent(
-     *             @OA\Property(
-     *                 property="stripe_account_id",
-     *                 type="string",
-     *                 example="acct_123456789"
-     *             ),
-     *             @OA\Property(
-     *                 property="details_submitted",
-     *                 type="boolean",
-     *                 example=true
-     *             ),
-     *             @OA\Property(
-     *                 property="charges_enabled",
-     *                 type="boolean",
-     *                 example=true
-     *             ),
-     *             @OA\Property(
-     *                 property="payouts_enabled",
-     *                 type="boolean",
-     *                 example=true
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=404,
-     *         description="Stripe account not found"
-     *     )
-     * )
+    /**
+     * Fetch current status directly from Stripe and sync local flags.
      */
     public function status(Request $request)
     {
@@ -180,65 +134,38 @@ class StripeConnectController extends Controller
             ], 404);
         }
 
-        $account = $this->stripe->accounts->retrieve(
+        $account = $this->stripe->v2->core->accounts->retrieve(
             $user->stripe_account_id,
-            []
+            [
+                'include' => [
+                    'configuration.merchant',
+                    'configuration.recipient',
+                    'requirements',
+                ],
+            ]
         );
 
+        [$chargesEnabled, $payoutsEnabled, $detailsSubmitted] = $this->extractStatusFlags($account);
+
         $user->update([
-            'stripe_onboarding_complete' => $account->details_submitted,
-            'stripe_charges_enabled' => $account->charges_enabled,
-            'stripe_payouts_enabled' => $account->payouts_enabled,
+            'stripe_onboarding_complete' => $detailsSubmitted,
+            'stripe_charges_enabled' => $chargesEnabled,
+            'stripe_payouts_enabled' => $payoutsEnabled,
         ]);
 
         return response()->json([
             'stripe_account_id' => $account->id,
-            'details_submitted' => $account->details_submitted,
-            'charges_enabled' => $account->charges_enabled,
-            'payouts_enabled' => $account->payouts_enabled,
-            'requirements' => $account->requirements,
+            'details_submitted' => $detailsSubmitted,
+            'charges_enabled' => $chargesEnabled,
+            'payouts_enabled' => $payoutsEnabled,
+            'requirements' => $account->requirements ?? null,
         ]);
     }
 
-
     /**
-     * @OA\Post(
-     *     path="/stripe/connect/payment-intent",
-     *     tags={"Stripe Connect"},
-     *     summary="Create payment intent with platform fee",
-     *     description="Creates a Stripe PaymentIntent and transfers funds to a connected account while keeping a platform fee.",
-     *     security={{ "bearerAuth": {} }},
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"amount","connected_account_id"},
-     *
-     *             @OA\Property(
-     *                 property="amount",
-     *                 type="number",
-     *                 format="float",
-     *                 example=100
-     *             ),
-     *
-     *             @OA\Property(
-     *                 property="connected_account_id",
-     *                 type="string",
-     *                 example="acct_123456789"
-     *             )
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Payment intent created successfully"
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error"
-     *     )
-     * )
+     * Unchanged from v1 — PaymentIntents/transfers are not part of
+     * Accounts v2; the `destination` still just needs a valid account ID,
+     * which v2 accounts also have (acct_...).
      */
     public function createPaymentIntent(Request $request)
     {
@@ -248,20 +175,15 @@ class StripeConnectController extends Controller
         ]);
 
         $amount = (int) ($request->amount * 100);
-
-        // Example: 10% platform fee
         $platformFee = (int) ($amount * 0.10);
 
         $paymentIntent = $this->stripe->paymentIntents->create([
             'amount' => $amount,
-            'currency' => 'usd',
-
+            'currency' => config('services.stripe.currency'),
             'automatic_payment_methods' => [
                 'enabled' => true,
             ],
-
             'application_fee_amount' => $platformFee,
-
             'transfer_data' => [
                 'destination' => $request->connected_account_id,
             ],
@@ -269,91 +191,109 @@ class StripeConnectController extends Controller
 
         return response()->json([
             'message' => 'Payment intent created successfully.',
-
             'payment_intent_id' => $paymentIntent->id,
-
             'client_secret' => $paymentIntent->client_secret,
-
             'amount' => $request->amount,
-
             'platform_fee' => $platformFee / 100,
         ]);
     }
 
-
     /**
-     * @OA\Get(
-     *     path="/stripe/connect/refresh",
-     *     tags={"Stripe Connect"},
-     *     summary="Refresh Stripe onboarding link",
-     *     description="Generates a new Stripe onboarding link when the previous link expires.",
-     *
-     *     @OA\Response(
-     *         response=302,
-     *         description="Redirects to a new Stripe onboarding URL"
-     *     )
-     * )
+     * Hit by a raw browser redirect from Stripe when a link expired/was
+     * exited early — user is identified via the signed `user` param,
+     * NOT via $request->user(), since there's no auth token on this request.
      */
     public function refresh(Request $request)
     {
-        $user = $request->user();
-
-        if (!$user || !$user->stripe_account_id) {
-            return response()->json([
-                'message' => 'Stripe account not found.',
-            ], 404);
+        if (!$request->hasValidSignature()) {
+            abort(403, 'Invalid or expired link.');
         }
 
-        $accountLink = $this->stripe->accountLinks->create([
+        $user = User::findOrFail($request->query('user'));
+
+        if (!$user->stripe_account_id) {
+            return response()->json(['message' => 'Stripe account not found.'], 404);
+        }
+
+        $accountLink = $this->stripe->v2->core->accountLinks->create([
             'account' => $user->stripe_account_id,
-
-            'refresh_url' => route('stripe.connect.refresh'),
-
-            'return_url' => route('stripe.connect.return'),
-
-            'type' => 'account_onboarding',
+            'use_case' => [
+                'type' => 'account_onboarding',
+                'account_onboarding' => [
+                    'configurations' => ['merchant', 'recipient'],
+                    'refresh_url' => URL::temporarySignedRoute(
+                        'stripe.connect.refresh',
+                        now()->addHours(2),
+                        ['user' => $user->id]
+                    ),
+                    'return_url' => URL::temporarySignedRoute(
+                        'stripe.connect.return',
+                        now()->addHours(2),
+                        ['user' => $user->id]
+                    ),
+                ],
+            ],
         ]);
 
         return redirect($accountLink->url);
     }
 
-
     /**
-     * @OA\Get(
-     *     path="/stripe/connect/return",
-     *     tags={"Stripe Connect"},
-     *     summary="Stripe onboarding return URL",
-     *     description="Called after the user completes or exits Stripe onboarding.",
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Stripe onboarding status returned successfully"
-     *     )
-     * )
+     * Hit by a raw browser redirect after the user completes/exits
+     * onboarding. Same signed-URL identification as refresh().
      */
-
     public function return(Request $request)
     {
-        $user = $request->user();
+        if (!$request->hasValidSignature()) {
+            abort(403, 'Invalid or expired link.');
+        }
 
-        $stripe = new StripeClient(config('services.stripe.secret'));
+        $user = User::findOrFail($request->query('user'));
 
-        $account = $stripe->accounts->retrieve(
+        $account = $this->stripe->v2->core->accounts->retrieve(
             $user->stripe_account_id,
-            []
+            [
+                'include' => [
+                    'configuration.merchant',
+                    'configuration.recipient',
+                ],
+            ]
         );
 
+        [$chargesEnabled, $payoutsEnabled, $detailsSubmitted] = $this->extractStatusFlags($account);
+
         $user->update([
-            'stripe_onboarding_complete' => $account->details_submitted,
+            'stripe_onboarding_complete' => $detailsSubmitted,
+            'stripe_charges_enabled' => $chargesEnabled,
+            'stripe_payouts_enabled' => $payoutsEnabled,
         ]);
 
-        return response()->json([
-            'details_submitted' => $account->details_submitted,
-            'charges_enabled' => $account->charges_enabled,
-            'payouts_enabled' => $account->payouts_enabled,
-        ]);
+        // Redirect to your frontend rather than returning raw JSON to a browser.
+        $status = ($chargesEnabled && $payoutsEnabled) ? 'complete' : 'incomplete';
+        return redirect(config('app.frontend_url') . '/stripe/onboarding-' . $status);
     }
 
+    /**
+     * Pull charges_enabled/payouts_enabled/details_submitted out of a v2
+     * Account response. VERIFY these property paths against a real dumped
+     * response before relying on this in production — v2's exact nested
+     * shape should be confirmed with dd($account->toArray()) once.
+     */
+    private function extractStatusFlags($account): array
+    {
+        $merchant = $account->configuration->merchant ?? null;
+        $recipient = $account->configuration->recipient ?? null;
 
-    
+        $chargesEnabled = $merchant
+            && ($merchant->capabilities->card_payments->status ?? null) === 'active';
+
+        $payoutsEnabled = $recipient
+            && ($recipient->capabilities->stripe_balance->stripe_transfers->status ?? null) === 'active';
+
+        // v2 doesn't have a single top-level details_submitted flag the same
+        // way v1 did — approximate it as "no outstanding requirements".
+        $detailsSubmitted = empty($account->requirements->entries ?? []);
+
+        return [(bool) $chargesEnabled, (bool) $payoutsEnabled, (bool) $detailsSubmitted];
+    }
 }
