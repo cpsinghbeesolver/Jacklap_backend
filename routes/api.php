@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\ContactUsController;
 use App\Http\Controllers\Api\BookingConcernController;
 use App\Http\Controllers\Api\StripeConnectController;
 use App\Http\Controllers\Api\StripeWebhookController;
+use App\Http\Controllers\Api\BookingAddonController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -173,7 +174,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/booking/concerns/list', [BookingConcernController::class, 'list']);
 
     Route::post('/booking/concerns', [BookingConcernController::class, 'store']);
-
+    Route::post('/booking/addon/request', [BookingAddonController::class, 'requestAddon']);
+    Route::get('/booking/{booking}/addon/requests', [BookingAddonController::class, 'listAddonRequests']);
+    Route::post('/booking/addon/respond', [BookingAddonController::class, 'respondAddon']);
 
     //Chat module
     Route::post('/create-conversations', [ChatController::class, 'createConversation']);
