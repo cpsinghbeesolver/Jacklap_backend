@@ -219,8 +219,8 @@ class StripeConnectController extends Controller
                     * required later.
                     */
                     'collection_options' => [
-                        'fields' => 'eventually_due',
-                        'future_requirements' => 'include',
+                        'fields' => 'currently_due',
+                        'future_requirements' => 'omit',
                     ],
                     'refresh_url' => URL::temporarySignedRoute(
                         'stripe.connect.refresh',
