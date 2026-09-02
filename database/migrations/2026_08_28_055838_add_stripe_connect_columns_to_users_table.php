@@ -12,9 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'stripe_account_id') && !Schema::hasColumn('users', 'stripe_onboarding_complete')) {
+            if (!Schema::hasColumn('users', 'stripe_account_id')) {
                 $table->string('stripe_account_id')->nullable()->unique();
+            }
+            if (!Schema::hasColumn('users', 'stripe_onboarding_complete')) {
                 $table->boolean('stripe_onboarding_complete')->default(false);
+            }
+            if (!Schema::hasColumn('users', 'stripe_charges_enabled')) {
+                $table->boolean('stripe_charges_enabled')->default(false);
+            }
+            if (!Schema::hasColumn('users', 'stripe_payouts_enabled')) {
+                $table->boolean('stripe_payouts_enabled')->default(false);
             }
         });
     }
@@ -30,6 +38,12 @@ return new class extends Migration
             }
             if (Schema::hasColumn('users', 'stripe_onboarding_complete')) {
                 $table->dropColumn('stripe_onboarding_complete');
+            }
+            if (Schema::hasColumn('users', 'stripe_charges_enabled')) {
+                $table->dropColumn('stripe_charges_enabled');
+            }
+            if (Schema::hasColumn('users', 'stripe_payouts_enabled')) {
+                $table->dropColumn('stripe_payouts_enabled');
             }
         });
     }

@@ -38,6 +38,6 @@ return [
   ],
   'fcm' => ['projectId' => 'jacklap-4cc98'],
   'background_check' => [
-      'webhook_secret' => env('BACKGROUND_CHECK_WEBHOOK_SECRET'),
+    'webhook_secret' => env('BACKGROUND_CHECK_WEBHOOK_SECRET'),
   ]
 ];

@@ -33,12 +33,12 @@ class File extends Model
             return null;
         }
 
-        return Storage::disk('s3')->exists($this->path)
-            ? Storage::disk('s3')->temporaryUrl(
-                $this->path,
-                now()->addMinutes(30)
-            )
-            : null;
+        // return Storage::disk('s3')->exists($this->path)
+        //     ? Storage::disk('s3')->temporaryUrl(
+        //         $this->path,
+        //         now()->addMinutes(30)
+        //     )
+        //     : null;
     }
 
     public function getPathAttribute($value)
