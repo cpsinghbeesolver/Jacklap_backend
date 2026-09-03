@@ -1127,6 +1127,8 @@ class UserDetailsController extends Controller
             'success' => true,
             'message' => 'Media uploaded successfully',
         ], 201);
+
+        return $response->withCookie(cookie()->forget('is_auth_incomplete'));
     }
 
     public function storeMediaData_old(StoreMediaRequest $request){
