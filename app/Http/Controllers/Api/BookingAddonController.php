@@ -80,6 +80,29 @@ class BookingAddonController extends Controller
             ], 422);
         }
 
+        // Prevent multiple addon requests for the same booking
+        // Pending and accepted requests cannot be requested again.
+        // Rejected requests can be submitted again.
+        $existingAddonRequest = BookingAddonRequest::where('booking_id', $booking->id)
+            ->whereIn('status', [
+                BookingAddonRequest::STATUS_PENDING,
+                BookingAddonRequest::STATUS_ACCEPTED,
+            ])
+            ->latest()
+            ->first();
+
+        if ($existingAddonRequest) {
+            $message = $existingAddonRequest->status === BookingAddonRequest::STATUS_PENDING
+                ? 'You already have a pending addon request for this booking.'
+                : 'Addon request has already been accepted for this booking.';
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'data' => $existingAddonRequest,
+            ], 422);
+        }
+
         // Resolve real prices/names server-side — never trust client-sent price.
         $serviceIds = collect($request->items)->pluck('service_id')->unique();
 

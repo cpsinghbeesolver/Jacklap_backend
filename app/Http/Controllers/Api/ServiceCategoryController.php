@@ -710,14 +710,30 @@ class ServiceCategoryController extends Controller
                 });
             })->when($request->dates, function ($q) use ($request) {
 
-                $dates      = $request->dates;
-                $matchType  = $request->dates_match ?? 'all'; // 'all' = provider must be free at every listed slot
-                $duration   = (int) ($request->slot_duration ?? 60);
+                $dates     = $request->dates;
+                $matchType = $request->dates_match ?? 'all';
+                $duration  = (int) ($request->slot_duration ?? 60);
 
-                $applySlotConstraint = function ($subQ, $day, $time) use ($duration) {
-                    // Must have an active weekly availability slot covering this day...
-                    $subQ->whereHas('availabilitySlots', function ($aq) use ($day, $time) {
-                        $aq->where('day', $day)->where('status', 1);
+                $applySlotConstraint = function (
+                    $subQ,
+                    $day,
+                    $time,
+                    $dateTime
+                ) use ($duration) {
+
+                    /*
+                    * Check weekly availability.
+                    *
+                    * availability_slots.opening_time / closing_time
+                    * should receive ONLY time, e.g. 12:30:00
+                    */
+                    $subQ->whereHas('availabilitySlots', function ($aq) use (
+                        $day,
+                        $time
+                    ) {
+
+                        $aq->where('day', $day)
+                        ->where('status', 1);
 
                         if ($time) {
                             $aq->where('opening_time', '<=', $time)
@@ -725,33 +741,105 @@ class ServiceCategoryController extends Controller
                         }
                     });
 
-                    // ...and must not have a confirmed/in_progress booking overlapping that slot.
-                    if ($time) {
-                        $subQ->whereDoesntHave('providerBookings', function ($bq) use ($time, $duration) {
-                            $bq->whereIn('status', ['confirmed', 'in_progress'])
-                                ->whereRaw(
-                                    'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE) AND end_datetime > ?',
-                                    [$time, $duration, $time]
-                                );
+                    /*
+                    * Check existing bookings.
+                    *
+                    * bookings.start_datetime / end_datetime
+                    * should receive FULL datetime.
+                    */
+                    if ($dateTime) {
+
+                        $subQ->whereDoesntHave('providerBookings', function ($bq) use (
+                            $dateTime,
+                            $duration
+                        ) {
+
+                            $bq->whereIn('status', [
+                                'confirmed',
+                                'in_progress'
+                            ])
+                            ->whereRaw(
+                                'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE)
+                                AND end_datetime > ?',
+                                [
+                                    $dateTime,
+                                    $duration,
+                                    $dateTime
+                                ]
+                            );
                         });
                     }
                 };
 
-                $q->where(function ($outer) use ($dates, $matchType, $applySlotConstraint) {
+
+                $q->where(function ($outer) use (
+                    $dates,
+                    $matchType,
+                    $applySlotConstraint
+                ) {
+
                     foreach ($dates as $entry) {
-                        $day  = strtolower(\Carbon\Carbon::parse($entry['date'])->format('l'));
+
+                        $date = $entry['date'];
                         $time = $entry['time'] ?? null;
 
-                        // For "time" comparisons above we need a full datetime, not a
-                        // bare time, since bookings are stored as start_datetime/end_datetime.
-                        $timeForQuery = $time ? $entry['date'] . ' ' . $time . ':00' : null;
+                        /*
+                        * Example:
+                        *
+                        * 2026-09-04 -> friday
+                        */
+                        $day = strtolower(
+                            \Carbon\Carbon::parse($date)->format('l')
+                        );
+
+                        /*
+                        * TIME for availability_slots
+                        *
+                        * 12:30 -> 12:30:00
+                        */
+                        $timeOnly = $time
+                            ? \Carbon\Carbon::createFromFormat(
+                                'H:i',
+                                $time
+                            )->format('H:i:s')
+                            : null;
+
+                        /*
+                        * FULL DATETIME for bookings
+                        *
+                        * 2026-09-04 + 12:30
+                        * -> 2026-09-04 12:30:00
+                        */
+                        $dateTime = $time
+                            ? $date . ' ' . $time . ':00'
+                            : null;
+
 
                         if ($matchType === 'any') {
-                            $outer->orWhere(function ($inner) use ($applySlotConstraint, $day, $timeForQuery) {
-                                $applySlotConstraint($inner, $day, $timeForQuery);
+
+                            $outer->orWhere(function ($inner) use (
+                                $applySlotConstraint,
+                                $day,
+                                $timeOnly,
+                                $dateTime
+                            ) {
+
+                                $applySlotConstraint(
+                                    $inner,
+                                    $day,
+                                    $timeOnly,
+                                    $dateTime
+                                );
                             });
+
                         } else {
-                            $applySlotConstraint($outer, $day, $timeForQuery);
+
+                            $applySlotConstraint(
+                                $outer,
+                                $day,
+                                $timeOnly,
+                                $dateTime
+                            );
                         }
                     }
                 });
@@ -783,7 +871,6 @@ class ServiceCategoryController extends Controller
             ->selectRaw('NULL as distance')
             ->latest();
         }
-
         $users = $query->paginate($perPage);
 
         return response()->json([
