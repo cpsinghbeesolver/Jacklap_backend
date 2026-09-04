@@ -1321,7 +1321,7 @@ class BookingController extends Controller
             ['status' => $statuses],
             [
                 'status' => 'nullable|array',
-                'status.*' => 'string|in:pending,confirmed,start_journey,in_progress,completed,cancelled'
+                'status.*' => 'string|in:pending,confirmed,start_journey,in_progress,completed,cancelled,expired'
             ]
         )->validate();
 
