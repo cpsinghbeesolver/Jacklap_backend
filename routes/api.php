@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\BookingConcernController;
 use App\Http\Controllers\Api\StripeConnectController;
 use App\Http\Controllers\Api\StripeWebhookController;
 use App\Http\Controllers\Api\BookingAddonController;
+use App\Http\Controllers\Api\ProviderPayoutController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -188,6 +190,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chat/unread-count', [ChatController::class, 'unreadCount']);
     Route::post('/account/deactivate', [UserController::class, 'deactivate']);
     Route::get('/provider/background-check-link', [UserController::class, 'backgroundCheckLink']);
+    Route::get('/provider/payout/balance', [ProviderPayoutController::class, 'balance']);
+    Route::post('/provider/payout/request', [ProviderPayoutController::class, 'store']);
+    Route::get('/provider/payout/requests', [ProviderPayoutController::class, 'index']);
+
 });
 
 
