@@ -54,7 +54,9 @@ class Booking extends Model
         'is_seeker_rated',
         'is_provider_rated',
         'expired_email_sent',
-        'is_service_rated'
+        'is_service_rated',
+        'platform_fee',
+        'platform_fee_type',
     ];
 
     protected $casts = [
@@ -76,6 +78,8 @@ class Booking extends Model
         'payable_amount' => 'float',
         'discount'       => 'float',
         'tax'            => 'float',
+        'platform_fee'   => 'float',
+        'platform_fee_type' => 'string',
     ];
 
     protected $appends = [

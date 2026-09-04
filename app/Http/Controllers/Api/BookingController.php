@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Cart;
+use App\Models\Setting;
 use App\Models\BookingItem;
 use App\Models\BookingImage;
 use Illuminate\Http\Request;
@@ -119,6 +120,23 @@ class BookingController extends Controller
                 $totalAmount += $item->price * $item->quantity * $hoursPerService;
             }
             $totalAmount = round($totalAmount, 2);
+
+
+            $setting = Setting::first();
+
+            $platformFee = 0;
+            $platformFeeType = null;
+
+            if ($setting) {
+                $platformFeeType = $setting->platform_fee_type;
+                $configuredFee = (float) $setting->platform_fee;
+
+                if ($platformFeeType === 'perc') {
+                    $platformFee = ($totalAmount * $configuredFee) / 100;
+                } elseif ($platformFeeType === 'num') {
+                    $platformFee = $configuredFee;
+                }
+            }
             // $otp = rand(100000, 999999);
             // ── Parent booking ───────────────────────────────────────────
             $parentBooking = Booking::create([
@@ -130,7 +148,8 @@ class BookingController extends Controller
                 'transmission_type'   => $cart->transmission_type,
                 'start_datetime'      => $cart->start_datetime,
                 'end_datetime'        => $cart->end_datetime,
-
+                'platform_fee'        => $platformFee,
+                'platform_fee_type'   => $platformFeeType,
                 'slot_date'           => null,
                 'slot_start_time'     => null,
                 'slot_end_time'       => null,
@@ -180,6 +199,16 @@ class BookingController extends Controller
                     $slotPayable += $item->price * $item->quantity * $slotHoursPerService;
                 }
                 $slotPayable = round($slotPayable, 2);
+
+                if ($setting) {
+                    $configuredFee = (float) $setting->platform_fee;
+
+                    if ($platformFeeType === 'perc') {
+                        $platformFee = ($slotPayable * $configuredFee) / 100;
+                    } elseif ($platformFeeType === 'num') {
+                        $platformFee = $configuredFee;
+                    }
+                }
                 // $otp = rand(100000, 999999);
                 $child = Booking::create([
                     'user_id'             => $user->id,
@@ -195,7 +224,8 @@ class BookingController extends Controller
                     'slot_start_time'     => $slot['start_time'],
                     'slot_end_time'       => $slot['end_time'] ?? null,
                     'slot_index'          => $index + 1,
-
+                    'platform_fee'        => $platformFee,
+                    'platform_fee_type'   => $platformFeeType,
                     'duration_type'       => $cart->duration_type,
                     'is_recurring'        => $cart->is_recurring,
                     'recurring_weeks'     => $cart->recurring_weeks,
@@ -362,6 +392,11 @@ class BookingController extends Controller
         $timeSlots         = $request->time_slots;
         $useMinutesPricing = in_array($parentBooking->service_category_id, [1, 3]);
 
+        $setting = Setting::first();
+
+        $platformFee = 0;
+        $platformFeeType = null;
+
         // service_id => minutes, resolved from the PARENT's own booking_item_id values.
         // This is what gets propagated to every child booking.
         $minutesByServiceId = [];
@@ -443,12 +478,23 @@ class BookingController extends Controller
                 }
                 $totalAmount = round($totalAmount, 2);
 
+                if ($setting) {
+                    $platformFeeType = $setting->platform_fee_type;
+                    $configuredFee = (float) $setting->platform_fee;
+
+                    if ($platformFeeType === 'perc') {
+                        $platformFee = ($totalAmount * $configuredFee) / 100;
+                    } elseif ($platformFeeType === 'num') {
+                        $platformFee = $configuredFee;
+                    }
+                }
                 $parentBooking->update([
                     'start_datetime' => $request->start_datetime,
                     'end_datetime'   => $request->end_datetime,
                     'duration_type'  => $request->duration_type,
                     'time_slots'     => $timeSlots,
-
+                    'platform_fee'        => $platformFee,
+                    'platform_fee_type'   => $platformFeeType,
                     'total_hours'    => $totalHours,
                     'total_amount'   => $totalAmount,
                     'payable_amount' => $totalAmount,
@@ -506,6 +552,16 @@ class BookingController extends Controller
                         $slotHoursTotal = $slotDuration;
                     }
 
+                    if ($setting) {
+                        $configuredFee = (float) $setting->platform_fee;
+
+                        if ($platformFeeType === 'perc') {
+                            $platformFee = ($slotPayable * $configuredFee) / 100;
+                        } elseif ($platformFeeType === 'num') {
+                            $platformFee = $configuredFee;
+                        }
+                    }
+
                     $child->update([
                         'start_datetime'  => $slot['date'] . ' ' . $slot['start_time'],
                         'end_datetime'    => $slot['date'] . ' ' . $slot['end_time'] ?? null,
@@ -513,7 +569,8 @@ class BookingController extends Controller
                         'slot_start_time' => $slot['start_time'],
                         'slot_end_time'   => $slot['end_time'] ?? null,
                         'duration_type'   => $request->duration_type,
-
+                        'platform_fee'        => $platformFee,
+                        'platform_fee_type'   => $platformFeeType,
                         'total_hours'     => $slotHoursTotal,
                         'total_amount'    => $slotPayable,
                         'payable_amount'  => $slotPayable,
@@ -547,7 +604,8 @@ class BookingController extends Controller
                         'booking_number'       => $this->generateBookingNumber('SLOT'),
                         'parent_booking_id'    => $parentBooking->id,
                         'transmission_type'    => $parentBooking->transmission_type,
-
+                        'platform_fee'         => $platformFee,
+                        'platform_fee_type'    => $platformFeeType,
                         'start_datetime'       => $slot['date'] . ' ' . $slot['start_time'],
                         'end_datetime'         => $slot['date'] . ' ' . $slot['end_time'],
                         'service_requirements' => $parentBooking->service_requirements,
@@ -590,11 +648,23 @@ class BookingController extends Controller
                             $child,
                             $minutesByServiceId
                         );
+                        
+                        if ($setting) {
+                            $configuredFee = (float) $setting->platform_fee;
+
+                            if ($platformFeeType === 'perc') {
+                                $platformFee = ($slotPayable * $configuredFee) / 100;
+                            } elseif ($platformFeeType === 'num') {
+                                $platformFee = $configuredFee;
+                            }
+                        }
 
                         $child->update([
                             'total_hours'    => $slotHoursTotal,
                             'total_amount'   => $slotPayable,
                             'payable_amount' => $slotPayable,
+                            'platform_fee'        => $platformFee,
+                            'platform_fee_type'   => $platformFeeType,
                         ]);
 
                         $wholeTotalHours  += $slotHoursTotal;
@@ -617,12 +687,24 @@ class BookingController extends Controller
             }
 
             if ($useMinutesPricing) {
+                if ($setting) {
+                    $platformFeeType = $setting->platform_fee_type;
+                    $configuredFee = (float) $setting->platform_fee;
+
+                    if ($platformFeeType === 'perc') {
+                        $platformFee = ($wholeTotalAmount * $configuredFee) / 100;
+                    } elseif ($platformFeeType === 'num') {
+                        $platformFee = $configuredFee;
+                    }
+                }
                 // Parent totals = sum across every child session (the whole booking),
                 // not just the parent's own single set of item rows.
                 $parentBooking->update([
                     'total_hours'    => $wholeTotalHours,
                     'total_amount'   => round($wholeTotalAmount, 2),
                     'payable_amount' => round($wholeTotalAmount, 2),
+                    'platform_fee'        => $platformFee,
+                    'platform_fee_type'   => $platformFeeType,
                 ]);
             }
 
@@ -1239,7 +1321,7 @@ class BookingController extends Controller
             ['status' => $statuses],
             [
                 'status' => 'nullable|array',
-                'status.*' => 'string|in:pending,confirmed,start_journey,in_progress,completed,cancelled'
+                'status.*' => 'string|in:pending,confirmed,start_journey,in_progress,completed,cancelled,expired'
             ]
         )->validate();
 
