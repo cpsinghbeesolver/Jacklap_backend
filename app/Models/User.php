@@ -176,11 +176,11 @@ class User extends Authenticatable
           return null;
       }
 
-      return Storage::disk('s3')->exists($this->image)
-          ? Storage::disk('s3')->temporaryUrl(
-              $this->image,
-              now()->addMinutes(30)
-          )
-          : null;
+      // return Storage::disk('s3')->exists($this->image)
+      //     ? Storage::disk('s3')->temporaryUrl(
+      //         $this->image,
+      //         now()->addMinutes(30)
+      //     )
+      //     : null;
   }
 }

@@ -45,6 +45,11 @@ class BookingItem extends Model
         return $this->belongsTo(Service::class, 'service_id');
     }
 
+    public function masterService()
+    {
+        return $this->belongsTo(MasterService::class, 'service_id');
+    }
+
     public function addonService()
     {
         return $this->belongsTo(AddonService::class, 'service_id');
