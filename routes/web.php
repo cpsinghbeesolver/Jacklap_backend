@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\LanguagesController;
 use App\Http\Controllers\Admin\ServiceCategoryController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\PayoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\user\HomeController as UserHomeController;
 use App\Http\Controllers\provider\HomeController as ProviderHomeController;
@@ -123,7 +124,10 @@ Route::middleware(['auth', IsAdmin::class])->group(function () {
     Route::post('provider-management/update/{id}', [ProviderList::class, 'updateUser'])->name('update-user');
     Route::get('/provider-management/view/{id}', [ProviderList::class, 'viewUser'])->name('view-user');
     
-    
+    Route::get('/payout-requests', [PayoutController::class, 'index'])->name('payout-list');
+    Route::get('/payout-requests/{id}', [PayoutController::class, 'view'])->name('view-payout');
+    Route::post('/payout-requests/{id}/approve', [PayoutController::class, 'approve'])->name('approve-payout');
+    Route::post('/payout-requests/{id}/reject', [PayoutController::class, 'reject'])->name('reject-payout');
     Route::get('settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('settings', [SettingsController::class, 'update'])->name('save-settings');
     Route::get('/pages/account-settings-account', [AccountSettingsAccount::class, 'index'])->name('pages-account-settings-account');

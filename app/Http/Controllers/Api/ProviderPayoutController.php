@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/Api/ProviderPayoutController.php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
