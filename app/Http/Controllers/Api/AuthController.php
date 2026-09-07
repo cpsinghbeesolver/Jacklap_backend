@@ -810,15 +810,20 @@ class AuthController extends Controller
         ]);
 
         // Generate Sanctum token
-        Auth::guard('web')->login($user);
-        $request->session()->regenerate();
+        // Auth::guard('web')->login($user);
+        // $request->session()->regenerate();
+        $token = $user->createToken(
+            $request->device_name ?? 'NextJS'
+        )->plainTextToken;
 
         $user->load(['roles', 'professionalDetail', 'media', 'bankDetail']);
         $role = $user->hasRole('provider') ? 'provider' : 'seeker';
         $response = response()->json([
             'success' => true,
             'message' => 'OTP verified successfully.',
-            'user'    => $user
+            'user'    => $user,
+            'token'  => $token,
+            'token_type' => 'Bearer'
         ]);
 
         $response->cookie('isLoggedIn', 'true', 120, '/', null, true, false);
