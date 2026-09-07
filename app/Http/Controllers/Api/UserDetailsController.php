@@ -853,7 +853,7 @@ class UserDetailsController extends Controller
                 ->delete();
         }
 
-        if($user->profile_step <> 4){
+        if($user->profile_step <> 3){
             // Update profile step
             $user->update([
                 'profile_step' => 1
@@ -964,7 +964,7 @@ class UserDetailsController extends Controller
             'image' => $path,
         ];
         
-        if ($user->profile_step != 4) {
+        if ($user->profile_step != 3) {
             $data['profile_step'] = 3;
         }
         
@@ -1117,7 +1117,7 @@ class UserDetailsController extends Controller
         }
 
         // ── 4. Advance profile step ───────────────────────────────────────────
-        if ($user->profile_step != 4) {
+        if ($user->profile_step != 3) {
             $user->profile_step = 3;
         }
 
@@ -1156,7 +1156,7 @@ class UserDetailsController extends Controller
             'certificate'      => $certificatePath,
             'profile_photo'    => $request->file('profile_photo')->store($folderPath, 's3')
         ]);
-        if($user->profile_step <> 4){
+        if($user->profile_step <> 3){
             $user->update([
                 'profile_step' => 3
             ]);
@@ -1225,9 +1225,9 @@ class UserDetailsController extends Controller
                 'account_type'        => $request->account_type,
             ]
         );
-        if($user->profile_step <> 4){
+        if($user->profile_step <> 3){
             $user->update([
-                'profile_step' => 4
+                'profile_step' => 3
             ]);
         }
 
@@ -1331,7 +1331,7 @@ class UserDetailsController extends Controller
 
         $user->update(['on_call_availability' => $request->on_call_availability]);
         
-        if($user->profile_step <> 4){
+        if($user->profile_step <> 3){
             // Update profile step
             $user->update([
                 'profile_step' => 2
