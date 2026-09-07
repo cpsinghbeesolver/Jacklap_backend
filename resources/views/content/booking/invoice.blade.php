@@ -162,7 +162,7 @@
         </tr>
     </thead>
     <tbody>
-        @forelse($booking->items as $i => $item)
+        @forelse($booking->serviceItems as $i => $item)
         <tr style="text-align:center">
             <td>{{ $i + 1 }}</td>
             <td>{{ $item->service_name }}</td>

@@ -885,28 +885,154 @@ class ServiceCategoryController extends Controller
      *     path="/user-detail",
      *     tags={"Provider"},
      *     summary="Get User Profile",
-     *     description="Fetch authenticated user profile details using Sanctum Bearer Token. This is for testing purpose.",
+     *     description="Fetch user profile details and calculate the distance between the requested user's location and the latitude/longitude provided by the user.",
      *     operationId="getUserDetail",
      *
      *     security={{ "bearerAuth": {} }},
-     *      @OA\Parameter(
+     *
+     *     @OA\Parameter(
      *         name="user_id",
      *         in="query",
      *         required=true,
-     *         @OA\Schema(type="integer", example=2),
-     *         description="ID of User"
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=27
+     *         ),
+     *         description="ID of the provider/user"
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="latitude",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="number",
+     *             format="double",
+     *             minimum=-90,
+     *             maximum=90,
+     *             example=30.7023507
+     *         ),
+     *         description="Latitude of the requesting user"
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="longitude",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(
+     *             type="number",
+     *             format="double",
+     *             minimum=-180,
+     *             maximum=180,
+     *             example=76.6937472
+     *         ),
+     *         description="Longitude of the requesting user"
      *     ),
      *
      *     @OA\Response(
      *         response=200,
-     *         description="User Detail fetched successfully",
+     *         description="User details fetched successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="User Detail fetched successfully."),
+     *             @OA\Property(
+     *                 property="success",
+     *                 type="boolean",
+     *                 example=true
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="User details fetched successfully."
+     *             ),
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 @OA\Property(property="user", type="object"),
+     *                 @OA\Property(
+     *                     property="id",
+     *                     type="integer",
+     *                     example=27
+     *                 ),
+     *                 @OA\Property(
+     *                     property="name",
+     *                     type="string",
+     *                     example="John Doe"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="role",
+     *                     type="string",
+     *                     example="provider"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="latitude",
+     *                     type="number",
+     *                     format="double",
+     *                     example=30.710000
+     *                 ),
+     *                 @OA\Property(
+     *                     property="longitude",
+     *                     type="number",
+     *                     format="double",
+     *                     example=76.700000
+     *                 ),
+     *                 @OA\Property(
+     *                     property="distance",
+     *                     type="number",
+     *                     format="double",
+     *                     nullable=true,
+     *                     example=1.12,
+     *                     description="Distance between the provided latitude/longitude and the user's location, in kilometers."
+     *                 ),
+     *                 @OA\Property(
+     *                     property="availability_status",
+     *                     type="integer",
+     *                     example=1
+     *                 ),
+     *                 @OA\Property(
+     *                     property="professionalDetail",
+     *                     type="object",
+     *                     nullable=true
+     *                 ),
+     *                 @OA\Property(
+     *                     property="services",
+     *                     type="array",
+     *                     @OA\Items(type="object")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="addonServices",
+     *                     type="array",
+     *                     @OA\Items(type="object")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="bankDetail",
+     *                     type="object",
+     *                     nullable=true
+     *                 ),
+     *                 @OA\Property(
+     *                     property="availabilitySlots",
+     *                     type="array",
+     *                     @OA\Items(type="object")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="languages",
+     *                     type="array",
+     *                     @OA\Items(type="object")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=400,
+     *         description="User not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="boolean",
+     *                 example=false
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="No User detail found"
      *             )
      *         )
      *     ),
@@ -915,16 +1041,19 @@ class ServiceCategoryController extends Controller
      *         response=401,
      *         description="Unauthenticated",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Unauthenticated."
+     *             )
      *         )
      *     )
      * )
      */
-
     public function getProviderDetail(Request $request)
     {
         $user = User::find($request->user_id);
-        
+
         if (!$user) {
             return response()->json([
                 'status' => false,
@@ -932,22 +1061,66 @@ class ServiceCategoryController extends Controller
             ], 400);
         }
 
-        if ($user) {
-            $user->setAttribute(
-                'role',
-                $user->hasRole('provider') ? 'provider' : 'seeker'
-            );
-        }
+        $user->setAttribute(
+            'role',
+            $user->hasRole('provider') ? 'provider' : 'seeker'
+        );
 
-        if($user->hasRole('provider')){
-            $user->load(['services.service','addonServices', 'professionalDetail','bankDetail','availabilitySlots','languages','serviceUseCases.serviceUseCase','licenseTypes.licenseType','providerMaterials.materialType']);
+        if ($user->hasRole('provider')) {
+            $user->load([
+                'services.service',
+                'addonServices',
+                'professionalDetail',
+                'bankDetail',
+                'availabilitySlots',
+                'languages',
+                'serviceUseCases.serviceUseCase',
+                'licenseTypes.licenseType',
+                'providerMaterials.materialType'
+            ]);
+
             $user->setRelation(
                 'services',
                 $this->appendAcademicClasses($user->services)
             );
-        }else{
-            $user->load(['languages']);
 
+            // Calculate distance from authenticated user's location
+            $authUser = auth()->user();
+
+            if (
+                $authUser &&
+                $request->latitude !== null &&
+                $request->longitude !== null &&
+                $user->latitude !== null &&
+                $user->longitude !== null
+            ) {
+                $lat1 = (float) $request->latitude;
+                $lng1 = (float) $request->longitude;
+
+                $lat2 = (float) $user->latitude;
+                $lng2 = (float) $user->longitude;
+
+                $earthRadius = 6371; // KM
+
+                $latDifference = deg2rad($lat2 - $lat1);
+                $lngDifference = deg2rad($lng2 - $lng1);
+
+                $a = sin($latDifference / 2) ** 2
+                    + cos(deg2rad($lat1))
+                    * cos(deg2rad($lat2))
+                    * sin($lngDifference / 2) ** 2;
+
+                $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+                $distance = round($earthRadius * $c, 2);
+
+                $user->setAttribute('distance', $distance);
+            } else {
+                $user->setAttribute('distance', null);
+            }
+
+        } else {
+            $user->load(['languages']);
         }
 
         return response()->json([
@@ -1635,29 +1808,35 @@ class ServiceCategoryController extends Controller
         $lat     = $request->latitude;
         $lng     = $request->longitude;
 
-        // Fixed radius for this endpoint — kept as a local constant rather than
-        // a request param, since "nearby" is defined as 10 km by spec.
         $radiusKm = 10;
 
-        $distanceQuery = "ROUND((6371 * acos(
-            cos(radians($lat)) 
-            * cos(radians(users.latitude)) 
-            * cos(radians(users.longitude) - radians($lng)) 
-            + sin(radians($lat)) 
-            * sin(radians(users.latitude))
-        )), 2)";
+        $distanceQuery = "
+            ROUND(
+                6371 * ACOS(
+                    COS(RADIANS($lat))
+                    * COS(RADIANS(users.latitude))
+                    * COS(RADIANS(users.longitude) - RADIANS($lng))
+                    + SIN(RADIANS($lat))
+                    * SIN(RADIANS(users.latitude))
+                ),
+                2
+            )
+        ";
 
         $users = User::query()
-            ->with([
-                'services', 'professionalDetail'
+            ->select([
+                'users.id',
+                'users.name',
+                'users.image',
+                'users.availability_status',
             ])
-           
-            // Only actual providers are returned.
+            ->with([
+                'professionalDetail:id,user_id,service_category_id',
+            ])
             ->whereHas('professionalDetail')
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->select('users.*')
-             ->selectSub(
+            ->whereNotNull('users.latitude')
+            ->whereNotNull('users.longitude')
+            ->selectSub(
                 Review::query()
                     ->selectRaw('COALESCE(AVG(rating), 0)')
                     ->whereColumn('reviews.model_id', 'users.id')
@@ -1667,16 +1846,28 @@ class ServiceCategoryController extends Controller
             ->selectRaw("$distanceQuery AS distance")
             ->having('distance', '<=', $radiusKm)
             ->orderByRaw("
-                CASE availability_status
+                CASE users.availability_status
                     WHEN 1 THEN 1
                     WHEN 2 THEN 2
                     WHEN 0 THEN 3
                     ELSE 4
                 END
-            ")               
-            ->orderByDesc('average_rating') // Highest rated first
-            ->orderBy('distance', 'asc') 
+            ")
+            ->orderByDesc('average_rating')
+            ->orderBy('distance', 'asc')
             ->paginate($perPage);
+
+        $users->getCollection()->transform(function ($user) {
+            return [
+                'id'                  => $user->id,
+                'name'                => $user->name,
+                'image_url'           => $user->image_url,
+                'average_rating'      => number_format((float) $user->average_rating, 1, '.', ''),
+                'distance'            => (float) $user->distance,
+                'availability_status' => $user->availability_status,
+                'service_category_id' => $user->professionalDetail?->service_category_id,
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -1832,6 +2023,7 @@ class ServiceCategoryController extends Controller
      *     )
      * )
      */
+    
     public function getRecommendedServices(Request $request)
     {
         $request->validate([
@@ -1849,46 +2041,88 @@ class ServiceCategoryController extends Controller
             ->select([
                 'booking_items.service_id',
                 'booking_items.service_type',
+
+                DB::raw('
+                    CASE
+                        WHEN booking_items.service_type = 0
+                            THEN MAX(master_services.name)
+                        WHEN booking_items.service_type = 1
+                            THEN MAX(addon_services.name)
+                    END as service_name
+                '),
+
                 DB::raw('MAX(bookings.service_category_id) as service_category_id'),
-                DB::raw('MAX(booking_items.service_name) as service_name'),
                 DB::raw('COUNT(*) as booking_count'),
                 DB::raw('SUM(booking_items.quantity) as total_quantity'),
             ])
-            // Join bookings so we can check status + reach the provider (User).
+
             ->join('bookings', 'bookings.id', '=', 'booking_items.booking_id')
-            ->where('bookings.status', '!=', Booking::STATUS_CANCELLED)
-            ->when($request->filled('service_type'), function ($q) use ($request) {
-                $q->where('booking_items.service_type', $request->service_type);
+
+            // Service
+            ->leftJoin('services', function ($join) {
+                $join->on('services.id', '=', 'booking_items.service_id')
+                    ->where('booking_items.service_type', 0);
             })
+             ->leftJoin('master_services', function ($join) {
+                $join->on('master_services.id', '=', 'booking_items.service_id')
+                    ->where('booking_items.service_type', 0);
+            })
+
+            // Addon Service
+            ->leftJoin('addon_services', function ($join) {
+                $join->on('addon_services.id', '=', 'booking_items.service_id')
+                    ->where('booking_items.service_type', 1);
+            })
+
+            ->where('bookings.status', '!=', Booking::STATUS_CANCELLED)
+
+            ->when($request->filled('service_type'), function ($q) use ($request) {
+                $q->where(
+                    'booking_items.service_type',
+                    $request->service_type
+                );
+            })
+
             ->when($request->filled('service_category_id'), function ($q) use ($request) {
                 $q->where('booking_items.service_type', 0)
                     ->whereHas('service', function ($sq) use ($request) {
-                        $sq->where('service_category_id', $request->service_category_id);
+                        $sq->where(
+                            'service_category_id',
+                            $request->service_category_id
+                        );
                     });
             });
 
-        // Only count bookings whose PROVIDER is within 10 km of the given point.
+        // Provider location filtering
         if ($request->filled('latitude') && $request->filled('longitude')) {
 
             $lat = $request->latitude;
             $lng = $request->longitude;
 
             $distanceQuery = "ROUND((6371 * acos(
-                cos(radians($lat)) 
-                * cos(radians(providers.latitude)) 
-                * cos(radians(providers.longitude) - radians($lng)) 
-                + sin(radians($lat)) 
+                cos(radians($lat))
+                * cos(radians(providers.latitude))
+                * cos(radians(providers.longitude) - radians($lng))
+                + sin(radians($lat))
                 * sin(radians(providers.latitude))
             )), 2)";
 
-            $query->join('users as providers', 'providers.id', '=', 'bookings.provider_id')
-                ->whereNotNull('providers.latitude')
-                ->whereNotNull('providers.longitude')
-                ->whereRaw("$distanceQuery <= ?", [$radiusKm]);
+            $query->join(
+                'users as providers',
+                'providers.id',
+                '=',
+                'bookings.provider_id'
+            )
+            ->whereNotNull('providers.latitude')
+            ->whereNotNull('providers.longitude')
+            ->whereRaw("$distanceQuery <= ?", [$radiusKm]);
         }
 
         $services = $query
-            ->groupBy('booking_items.service_id', 'booking_items.service_type')
+            ->groupBy(
+                'booking_items.service_id',
+                'booking_items.service_type'
+            )
             ->orderByDesc('booking_count')
             ->paginate($perPage);
 
@@ -1898,4 +2132,70 @@ class ServiceCategoryController extends Controller
             'data'    => $services,
         ]);
     }
+    // public function getRecommendedServices(Request $request)
+    // {
+    //     $request->validate([
+    //         'service_category_id' => 'nullable|integer|exists:service_categories,id',
+    //         'service_type'        => 'nullable|integer|in:0,1',
+    //         'per_page'            => 'nullable|integer|min:1|max:50',
+    //         'latitude'            => 'nullable|numeric|between:-90,90|required_with:longitude',
+    //         'longitude'           => 'nullable|numeric|between:-180,180|required_with:latitude',
+    //     ]);
+
+    //     $perPage  = $request->per_page ?? 10;
+    //     $radiusKm = 10;
+
+    //     $query = BookingItem::query()
+    //         ->select([
+    //             'booking_items.service_id',
+    //             'booking_items.service_type',
+    //             DB::raw('MAX(bookings.service_category_id) as service_category_id'),
+    //             DB::raw('MAX(booking_items.service_name) as service_name'),
+    //             DB::raw('COUNT(*) as booking_count'),
+    //             DB::raw('SUM(booking_items.quantity) as total_quantity'),
+    //         ])
+    //         // Join bookings so we can check status + reach the provider (User).
+    //         ->join('bookings', 'bookings.id', '=', 'booking_items.booking_id')
+    //         ->where('bookings.status', '!=', Booking::STATUS_CANCELLED)
+    //         ->when($request->filled('service_type'), function ($q) use ($request) {
+    //             $q->where('booking_items.service_type', $request->service_type);
+    //         })
+    //         ->when($request->filled('service_category_id'), function ($q) use ($request) {
+    //             $q->where('booking_items.service_type', 0)
+    //                 ->whereHas('service', function ($sq) use ($request) {
+    //                     $sq->where('service_category_id', $request->service_category_id);
+    //                 });
+    //         });
+
+    //     // Only count bookings whose PROVIDER is within 10 km of the given point.
+    //     if ($request->filled('latitude') && $request->filled('longitude')) {
+
+    //         $lat = $request->latitude;
+    //         $lng = $request->longitude;
+
+    //         $distanceQuery = "ROUND((6371 * acos(
+    //             cos(radians($lat)) 
+    //             * cos(radians(providers.latitude)) 
+    //             * cos(radians(providers.longitude) - radians($lng)) 
+    //             + sin(radians($lat)) 
+    //             * sin(radians(providers.latitude))
+    //         )), 2)";
+
+    //         $query->join('users as providers', 'providers.id', '=', 'bookings.provider_id')
+    //             ->whereNotNull('providers.latitude')
+    //             ->whereNotNull('providers.longitude')
+    //             ->whereRaw("$distanceQuery <= ?", [$radiusKm]);
+    //     }
+
+    //     $services = $query
+    //         ->groupBy('booking_items.service_id', 'booking_items.service_type')
+    //         ->orderByDesc('booking_count')
+    //         ->paginate($perPage);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Recommended services fetched successfully',
+    //         'data'    => $services,
+    //     ]);
+    // }
 }

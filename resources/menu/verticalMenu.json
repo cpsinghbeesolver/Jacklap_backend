@@ -61,6 +61,12 @@
       "slug": "license-type"
     },
     {
+      "url": "/payout-requests",
+      "icon": "menu-icon tf-icons ri-bank-card-line",
+      "name": "Payout Requests",
+      "slug": "payout-requests"
+    },
+    {
       "url": "/page",
       "icon": "menu-icon tf-icons ri-file-text-line",
       "name": "Pages",
