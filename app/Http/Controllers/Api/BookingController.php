@@ -597,6 +597,16 @@ class BookingController extends Controller
                         $slotPayable = round($slotPayable, 2);
                     }
 
+                    if ($setting) {
+                        $configuredFee = (float) $setting->platform_fee;
+
+                        if ($platformFeeType === 'perc') {
+                            $platformFee = ($slotPayable * $configuredFee) / 100;
+                        } elseif ($platformFeeType === 'num') {
+                            $platformFee = $configuredFee;
+                        }
+                    }
+
                     $child = Booking::create([
                         'user_id'              => $user->id,
                         'provider_id'          => $parentBooking->provider_id,
@@ -626,7 +636,8 @@ class BookingController extends Controller
                         'discount'             => 0,
                         'tax'                  => 0,
                         'payable_amount'       => $useMinutesPricing ? 0 : $slotPayable,
-
+                        'platform_fee'         => $platformFee,
+                        'platform_fee_type'    => $platformFeeType,
                         'address_id'           => $parentBooking->address_id,
                         'address_json'         => $parentBooking->address_json,
 
