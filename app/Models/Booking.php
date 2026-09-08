@@ -57,6 +57,10 @@ class Booking extends Model
         'is_service_rated',
         'platform_fee',
         'platform_fee_type',
+        'cancellation_fee_required',
+        'cancellation_fee_amount',
+        'cancellation_fee_paid',
+        'cancellation_fee_paid_at',
     ];
 
     protected $casts = [
@@ -253,5 +257,32 @@ class Booking extends Model
     public function images()
     {
         return $this->hasMany(BookingImage::class);
+    }
+
+    public function isWithinCancellationWindow(): bool
+    {
+        $setting = \App\Models\Setting::first();
+        $windowHours = $setting->cancellation_window_hours ?? 2;
+
+        $bookingStart = \Carbon\Carbon::parse($this->start_datetime);
+
+        return now()->gte($bookingStart->copy()->subHours($windowHours))
+            && now()->lt($bookingStart);
+    }
+
+    public function calculateCancellationFee(): float
+    {
+        $setting = \App\Models\Setting::first();
+        if (!$setting) {
+            return 0.00;
+        }
+
+        $base = (float) $this->payable_amount;
+
+        if ($setting->cancellation_fee_type === 'perc') {
+            return round(($base * (float) $setting->cancellation_fee_value) / 100, 2);
+        }
+
+        return round((float) $setting->cancellation_fee_value, 2);
     }
 }

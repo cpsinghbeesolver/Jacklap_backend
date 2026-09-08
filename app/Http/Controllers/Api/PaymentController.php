@@ -10,7 +10,7 @@ use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Stripe\Exception\ApiErrorException;
 use App\Events\PaymentSuccessful;
-
+use App\Events\BookingStatusUpdated;
 class PaymentController extends Controller
 {
     public function __construct()
@@ -174,6 +174,184 @@ class PaymentController extends Controller
 
     /**
      * @OA\Post(
+     *     path="/booking/{id}/cancellation-fee/payment/intent",
+     *     tags={"Payments"},
+     *     summary="Create Cancellation Fee PaymentIntent",
+     *     description="Creates a Stripe PaymentIntent for the pending cancellation fee of a booking.",
+     *     operationId="createCancellationFeeIntent",
+     *     security={{ "bearerAuth": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Booking ID",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=12
+     *         )
+     *     ),
+     *
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="reason",
+     *                 type="string",
+     *                 maxLength=500,
+     *                 nullable=true,
+     *                 example="Cancellation requested by customer",
+     *                 description="Optional cancellation reason"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cancellation fee PaymentIntent created successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="payment_intent_id",
+     *                 type="string",
+     *                 example="pi_3PxABC123xyz"
+     *             ),
+     *             @OA\Property(
+     *                 property="client_secret",
+     *                 type="string",
+     *                 example="pi_3PxABC123xyz_secret_xxx"
+     *             ),
+     *             @OA\Property(
+     *                 property="return_url",
+     *                 type="string",
+     *                 example="https://yourapp.com/cancellation-fee/payment/return?booking_id=12&signature=xxx"
+     *             ),
+     *             @OA\Property(
+     *                 property="amount",
+     *                 type="number",
+     *                 format="float",
+     *                 example=50.00
+     *             ),
+     *             @OA\Property(
+     *                 property="currency",
+     *                 type="string",
+     *                 example="usd"
+     *             ),
+     *             @OA\Property(
+     *                 property="payment_id",
+     *                 type="integer",
+     *                 example=42
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Booking not found"
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Cancellation fee unavailable or already paid",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="No pending cancellation fee for this booking."
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Stripe error",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Stripe error: Your card was declined."
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function createCancellationFeeIntent(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'sometimes|string|max:500',
+        ]);
+
+        $booking = Booking::with('user')->findOrFail($id);
+
+        if ($booking->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if (!$booking->cancellation_fee_required || $booking->cancellation_fee_paid) {
+            return response()->json(['message' => 'No pending cancellation fee for this booking.'], 422);
+        }
+
+        $amount   = $booking->cancellation_fee_amount;
+        $currency = config('services.stripe.currency', 'usd');
+
+        $returnUrl = URL::temporarySignedRoute(
+            'cancellation-fee.payment.return',
+            now()->addHours(2),
+            ['booking_id' => $booking->id, 'user_id' => auth()->id()]
+        );
+
+        try {
+            $intent = PaymentIntent::create([
+                'amount'               => (int) round($amount * 100),
+                'currency'             => $currency,
+                'payment_method_types' => ['card'],
+                'metadata'             => [
+                    'booking_id'     => $booking->id,
+                    'booking_number' => $booking->booking_number,
+                    'user_id'        => auth()->id(),
+                    'purpose'        => 'cancellation_fee',
+                ],
+                'description' => 'Cancellation fee for Booking #' . $booking->booking_number,
+            ]);
+        } catch (ApiErrorException $e) {
+            return response()->json(['message' => 'Stripe error: ' . $e->getMessage()], 500);
+        }
+
+        $payment = Payment::updateOrCreate(
+            ['booking_id' => $booking->id, 'purpose' => 'cancellation_fee', 'status' => 'pending'],
+            [
+                'user_id'                  => auth()->id(),
+                'stripe_payment_intent_id' => $intent->id,
+                'payment_method'           => 'card',
+                'amount'                   => $amount,
+                'currency'                 => $currency,
+                'status'                   => 'pending',
+                'stripe_response'          => $intent->toArray(),
+                'cancellation_reason'      => $request->reason,
+            ]
+        );
+
+        return response()->json([
+            'payment_intent_id' => $intent->id,
+            'client_secret'     => $intent->client_secret,
+            'return_url'        => $returnUrl,
+            'amount'            => $amount,
+            'currency'          => $currency,
+            'payment_id'        => $payment->id,
+        ]);
+    }
+
+    /**
+     * @OA\Post(
      *     path="/booking/{id}/payment/confirm",
      *     tags={"Payments"},
      *     summary="Confirm PaymentIntent (Next.js only)",
@@ -283,11 +461,12 @@ class PaymentController extends Controller
             'stripe_response' => $intent->toArray(),
         ]);
 
-        if($localStatus == 'succeeded'){
-            //Trigger event
-            broadcast(new PaymentSuccessful(
-                $booking->id
-            ));
+        if ($localStatus == 'succeeded') {
+            if ($payment->purpose === 'cancellation_fee') {
+                $this->markCancellationFeePaidAndCancel($booking, $payment, $intent->toArray());
+            } else {
+                broadcast(new PaymentSuccessful($booking->id));
+            }
         }
 
         return response()->json([
@@ -363,8 +542,12 @@ class PaymentController extends Controller
         }
 
         // Fallback: webhook may not have fired yet
-        if ($intent->status === 'succeeded' && !$booking->is_paid) {
-            $this->markBookingPaid($booking, $payment, $intent->toArray());
+        if ($intent->status === 'succeeded') {
+            if ($payment->purpose === 'cancellation_fee' && !$booking->cancellation_fee_paid) {
+                $this->markCancellationFeePaidAndCancel($booking, $payment, $intent->toArray());
+            } elseif ($payment->purpose !== 'cancellation_fee' && !$booking->is_paid) {
+                $this->markBookingPaid($booking, $payment, $intent->toArray());
+            }
         } elseif (in_array($intent->status, ['canceled', 'payment_failed'])) {
             $this->markPaymentFailed($payment, $intent->toArray());
         }
@@ -402,9 +585,11 @@ class PaymentController extends Controller
         $booking = $payment->booking;
 
         match ($event->type) {
-            'payment_intent.succeeded'      => $this->markBookingPaid($booking, $payment, (array) $intent),
+            'payment_intent.succeeded' => $payment->purpose === 'cancellation_fee'
+                ? $this->markCancellationFeePaidAndCancel($booking, $payment, (array) $intent)
+                : $this->markBookingPaid($booking, $payment, (array) $intent),
             'payment_intent.payment_failed' => $this->markPaymentFailed($payment, (array) $intent),
-            default                         => null,
+            default => null,
         };
 
         return response()->json(['received' => true]);
@@ -431,8 +616,12 @@ class PaymentController extends Controller
             return view('payment.return', ['status' => 'failed', 'booking' => $booking, 'isPaid' => false]);
         }
 
-        if ($intent->status === 'succeeded' && !$booking->is_paid) {
-            $this->markBookingPaid($booking, $payment, $intent->toArray());
+        if ($intent->status === 'succeeded') {
+            if ($payment->purpose === 'cancellation_fee' && !$booking->cancellation_fee_paid) {
+                $this->markCancellationFeePaidAndCancel($booking, $payment, $intent->toArray());
+            } elseif ($payment->purpose !== 'cancellation_fee' && !$booking->is_paid) {
+                $this->markBookingPaid($booking, $payment, $intent->toArray());
+            }
         } elseif (in_array($intent->status, ['canceled', 'payment_failed'])) {
             $this->markPaymentFailed($payment, $intent->toArray());
         }
@@ -452,6 +641,38 @@ class PaymentController extends Controller
     {
         $payment->update(['status' => 'succeeded', 'stripe_response' => $intentData]);
         $booking->update(['is_paid' => true, 'payment_status' => 'paid']);
+    }
+
+    private function markCancellationFeePaidAndCancel(Booking $booking, Payment $payment, array $intentData): void
+    {
+        $payment->update(['status' => 'succeeded', 'stripe_response' => $intentData]);
+
+        $booking->update([
+            'cancellation_fee_paid'    => true,
+            'cancellation_fee_paid_at' => now(),
+        ]);
+
+        $bookingController = app(\App\Http\Controllers\Api\BookingController::class);
+
+        if ($booking->isParent()) {
+            $bookingController->cancelParentAndChildren($booking, $payment->cancellation_reason);
+        } else {
+            $booking->update([
+                'status'        => 'cancelled',
+                'cancel_reason' => $payment->cancellation_reason,
+            ]);
+
+            if ($booking->parent_booking_id) {
+                $bookingController->syncParentStatus($booking->parent_booking_id);
+            }
+        }
+
+        broadcast(new BookingStatusUpdated(
+            $booking->id,
+            $booking->fresh()->status,
+            $booking->provider_id,
+            $booking->user_id
+        ));
     }
 
     private function markPaymentFailed(Payment $payment, array $intentData): void

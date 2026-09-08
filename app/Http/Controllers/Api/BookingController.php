@@ -1138,6 +1138,24 @@ class BookingController extends Controller
             ], 422);
         }
 
+        if ($booking->isWithinCancellationWindow() && !$booking->cancellation_fee_paid) {
+            $fee = $booking->calculateCancellationFee();
+
+            if ($fee > 0) {
+                $booking->update([
+                    'cancellation_fee_required' => true,
+                    'cancellation_fee_amount'   => $fee,
+                ]);
+
+                return response()->json([
+                    'success'                   => false,
+                    'requires_cancellation_fee' => true,
+                    'cancellation_fee_amount'   => $fee,
+                    'message'                   => "Cancelling this close to your booking requires a cancellation fee of {$fee}. Please pay to proceed.",
+                ], 422);
+            }
+        }
+
         if ($request->boolean('cancel_all') || $booking->isParent()) {
             $this->cancelParentAndChildren($booking, $request->reason);
 
@@ -1229,7 +1247,7 @@ class BookingController extends Controller
         }, $timeSlots);
     }
 
-    private function cancelParentAndChildren(Booking $parent, ?string $reason)
+    public function cancelParentAndChildren(Booking $parent, ?string $reason)
     {
         Booking::where('parent_booking_id', $parent->id)
             ->whereNotIn('status', ['completed', 'cancelled'])
@@ -1244,7 +1262,7 @@ class BookingController extends Controller
         ]);
     }
 
-    private function syncParentStatus(int $parentId)
+    public function syncParentStatus(int $parentId)
     {
         $parent = Booking::find($parentId);
         if (!$parent) return;
@@ -1566,6 +1584,30 @@ class BookingController extends Controller
 
             $message = '';
             $newStatus = null;
+
+            // ADDED — cancellation fee gate, only relevant when the action is 'cancelled'
+            if ($request->action === 'cancelled'
+                && $booking->isWithinCancellationWindow()
+                && !$booking->cancellation_fee_paid) {
+
+                $fee = $booking->calculateCancellationFee();
+
+                if ($fee > 0) {
+                    $booking->update([
+                        'cancellation_fee_required' => true,
+                        'cancellation_fee_amount'   => $fee,
+                    ]);
+
+                    DB::rollBack();
+
+                    return response()->json([
+                        'success'                   => false,
+                        'requires_cancellation_fee' => true,
+                        'cancellation_fee_amount'   => $fee,
+                        'message'                   => "Cancelling this close to the booking requires a cancellation fee of {$fee}.",
+                    ], 422);
+                }
+            }
 
             switch ($request->action) {
 
