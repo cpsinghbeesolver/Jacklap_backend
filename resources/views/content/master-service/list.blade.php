@@ -23,7 +23,7 @@
                     <th>Category</th>
                     <th>Type</th>
                     <th>Status</th>
-                    <th>Price Limit</th>
+                    {{-- <th>Price Limit</th> --}}
                     <th>Action</th>
                 </tr>
             </thead>
@@ -44,7 +44,7 @@ let table = $('#service-table').DataTable({
         { data: 'category' },
         { data: 'type' },
         { data: 'status', orderable: false },
-        { data: 'price_limit', orderable: false },
+        //{ data: 'price_limit', orderable: false },
         { data: 'actions', orderable: false }
     ]
 });

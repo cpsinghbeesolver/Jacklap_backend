@@ -133,7 +133,7 @@ class MasterServiceController extends Controller
             'service_category_id' => 'required',
             'type' => 'required',
             'input_type' => 'required',
-            'price_limit' => 'required|numeric'
+            // 'price_limit' => 'required|numeric'
         ]);
 
         MasterService::create($request->all());
@@ -158,7 +158,7 @@ class MasterServiceController extends Controller
             'service_category_id' => 'required',
             'type' => 'required',
             'input_type' => 'required',
-            'price_limit' => 'required|numeric'
+            // 'price_limit' => 'required|numeric'
         ]);
         $service->update($request->all());
 
