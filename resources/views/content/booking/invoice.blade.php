@@ -95,12 +95,12 @@
             {{ $booking->provider->name ?? 'N/A' }}<br><br>
 
             @if($address)
-                <strong>Customer:</strong><br>
+                <strong>Customer Address:</strong><br>
                 {{ ucfirst($address['name']) }}<br>
                 {{ $address['text'] }}<br>
                 @if($address['phone']) {{ $address['phone'] }} @endif
             @else
-                <strong>Customer:</strong><br>
+                <strong>Customer Address:</strong><br>
                 {{ $booking->user->name ?? 'N/A' }}<br>
                 {{ $booking->user->email ?? '' }}
             @endif
@@ -169,8 +169,8 @@
             <td>{{ $item->class_name ?? '—' }}</td>
             <td>{{ ucfirst($item->type ?? '—') }}</td>
             <td>{{ $item->quantity }}</td>
-            <td>INR {{ number_format($item->price, 2) }}</td>
-            <td>INR {{ number_format($item->total_price, 2) }}</td>
+            <td>CAD {{ number_format($item->price, 2) }}</td>
+            <td>CAD {{ number_format($item->total_price, 2) }}</td>
         </tr>
         @empty
         <tr>
@@ -184,26 +184,26 @@
 <table class="summary-table">
     <tr>
         <th class="text-gstt">Subtotal</th>
-        <td class="text-left">INR {{ number_format($booking->total_amount, 2) }}</td>
+        <td class="text-left">CAD {{ number_format($booking->total_amount, 2) }}</td>
     </tr>
 
     @if($booking->discount > 0)
     <tr>
         <th>Discount</th>
-        <td class="text-left">- INR {{ number_format($booking->discount, 2) }}</td>
+        <td class="text-left">- CAD {{ number_format($booking->discount, 2) }}</td>
     </tr>
     @endif
 
     @if($booking->tax > 0)
     <tr>
         <th class="text-gstt">Tax</th>
-        <td class="text-left">INR {{ number_format($booking->tax, 2) }}</td>
+        <td class="text-left">CAD {{ number_format($booking->tax, 2) }}</td>
     </tr>
     @endif
 
     <tr class="total-row">
         <th>Amount Paid</th>
-        <td class="text-left">INR {{ number_format($booking->payable_amount, 2) }}</td>
+        <td class="text-left">CAD {{ number_format($booking->payable_amount, 2) }}</td>
     </tr>
     <tr>
         <th class="price-text"></th>
