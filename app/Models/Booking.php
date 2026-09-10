@@ -279,10 +279,10 @@ class Booking extends Model
 
         $base = (float) $this->payable_amount;
 
-        if ($setting->cancellation_fee_type === 'perc') {
-            return round(($base * (float) $setting->cancellation_fee_value) / 100, 2);
+        if ($setting->cancellation_charges_type === 'perc') {
+            return round(($base * (float) $setting->cancellation_charges) / 100, 2);
         }
 
-        return round((float) $setting->cancellation_fee_value, 2);
+        return round((float) $setting->cancellation_charges, 2);
     }
 }
