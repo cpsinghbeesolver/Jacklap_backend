@@ -1123,7 +1123,7 @@ class UserDetailsController extends Controller
 
         $user->save();
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'message' => 'Media uploaded successfully',
         ], 201);

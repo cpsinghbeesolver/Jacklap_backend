@@ -511,6 +511,15 @@ class CartController extends Controller
             'total_amount' => $totalAmount,
             'total_hours'  => $totalHours,
         ]);
+        
+        $totalDays = 1;
+        if(in_array($request->service_category_id, [1,2,3])) {
+            $totalDays = count($request->selected_dates ?? $request->selected_days ?? []);
+            $cart->update([
+                'total_amount' => $totalAmount * $totalDays,
+                'total_hours'  => $totalHours * $totalDays,
+            ]);
+        }
 
         // ─────────────────────────────────────────────
         // 12. LOAD RELATIONS & RETURN
