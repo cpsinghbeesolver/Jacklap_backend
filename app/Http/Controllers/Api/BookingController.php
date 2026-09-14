@@ -132,7 +132,7 @@ class BookingController extends Controller
                 $configuredFee = (float) $setting->platform_fee;
 
                 if ($platformFeeType === 'perc') {
-                    $platformFee = ($totalAmount * $configuredFee) / 100;
+                    $platformFee = ($cart->total_amount * $configuredFee) / 100;
                 } elseif ($platformFeeType === 'num') {
                     $platformFee = $configuredFee;
                 }
@@ -161,7 +161,7 @@ class BookingController extends Controller
                 'selected_days'       => $cart->selected_days,
                 'time_slots'          => $timeSlots,
 
-                'total_hours'         => $totalHours,
+                'total_hours'         => $cart->total_hours,
                 'total_amount'        => $cart->total_amount,
                 'discount'            => 0,
                 'tax'                 => 0,
@@ -202,7 +202,7 @@ class BookingController extends Controller
 
                 if ($setting) {
                     $configuredFee = (float) $setting->platform_fee;
-
+                    $platformFeeType = $setting->platform_fee_type;
                     if ($platformFeeType === 'perc') {
                         $platformFee = ($slotPayable * $configuredFee) / 100;
                     } elseif ($platformFeeType === 'num') {
@@ -599,7 +599,7 @@ class BookingController extends Controller
 
                     if ($setting) {
                         $configuredFee = (float) $setting->platform_fee;
-
+                        $platformFeeType = $setting->platform_fee_type;
                         if ($platformFeeType === 'perc') {
                             $platformFee = ($slotPayable * $configuredFee) / 100;
                         } elseif ($platformFeeType === 'num') {
@@ -662,7 +662,7 @@ class BookingController extends Controller
                         
                         if ($setting) {
                             $configuredFee = (float) $setting->platform_fee;
-
+                            $platformFeeType = $setting->platform_fee_type;
                             if ($platformFeeType === 'perc') {
                                 $platformFee = ($slotPayable * $configuredFee) / 100;
                             } elseif ($platformFeeType === 'num') {
@@ -701,7 +701,6 @@ class BookingController extends Controller
                 if ($setting) {
                     $platformFeeType = $setting->platform_fee_type;
                     $configuredFee = (float) $setting->platform_fee;
-
                     if ($platformFeeType === 'perc') {
                         $platformFee = ($wholeTotalAmount * $configuredFee) / 100;
                     } elseif ($platformFeeType === 'num') {
