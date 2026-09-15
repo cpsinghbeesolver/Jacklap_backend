@@ -1597,7 +1597,7 @@ class BookingController extends Controller
                         'cancellation_fee_amount'   => $fee,
                     ]);
 
-                    DB::rollBack();
+                    DB::commit();
 
                     return response()->json([
                         'success'                   => false,
