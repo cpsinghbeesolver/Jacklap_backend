@@ -553,6 +553,7 @@ class BookingController extends Controller
                     }
 
                     if ($setting) {
+                        $platformFeeType = $setting->platform_fee_type;
                         $configuredFee = (float) $setting->platform_fee;
 
                         if ($platformFeeType === 'perc') {
