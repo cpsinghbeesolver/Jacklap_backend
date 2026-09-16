@@ -1444,6 +1444,10 @@ class BookingController extends Controller
             ], 403);
         }
 
+        if ($user->hasRole('seeker')) {
+            $booking->makeVisible('otp');
+        }
+
         return response()->json([
             'success' => true,
             'data' => $booking
