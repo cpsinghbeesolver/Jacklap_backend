@@ -300,7 +300,7 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Cancellation fee already paid for this booking.'], 422);
         }
 
-        if (!in_array($booking->status, ['pending', 'confirmed'])) {
+        if (!in_array($booking->status, ['pending', 'confirmed', 'start_journey'])) {
             return response()->json(['message' => 'Only pending or confirmed bookings can be cancelled.'], 422);
         }
 
