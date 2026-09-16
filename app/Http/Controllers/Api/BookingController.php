@@ -1584,30 +1584,6 @@ class BookingController extends Controller
             $message = '';
             $newStatus = null;
 
-            // ADDED — cancellation fee gate, only relevant when the action is 'cancelled'
-            if ($request->action === 'cancelled'
-                && $booking->isWithinCancellationWindow()
-                && !$booking->cancellation_fee_paid) {
-
-                $fee = $booking->calculateCancellationFee();
-
-                if ($fee > 0) {
-                    $booking->update([
-                        'cancellation_fee_required' => true,
-                        'cancellation_fee_amount'   => $fee,
-                    ]);
-
-                    DB::commit();
-
-                    return response()->json([
-                        'success'                   => false,
-                        'requires_cancellation_fee' => true,
-                        'cancellation_fee_amount'   => $fee,
-                        'message'                   => "Cancelling this close to the booking requires a cancellation fee of {$fee}.",
-                    ], 422);
-                }
-            }
-
             switch ($request->action) {
 
                 case 'confirmed':

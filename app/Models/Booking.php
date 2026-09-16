@@ -86,6 +86,10 @@ class Booking extends Model
         'platform_fee_type' => 'string',
     ];
 
+    protected $hidden = [
+        'otp',
+    ];
+    
     protected $appends = [
         'license_type_details',
         'material_details',

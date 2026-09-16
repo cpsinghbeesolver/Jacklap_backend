@@ -296,11 +296,30 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if (!$booking->cancellation_fee_required || $booking->cancellation_fee_paid) {
-            return response()->json(['message' => 'No pending cancellation fee for this booking.'], 422);
+        if ($booking->cancellation_fee_paid) {
+            return response()->json(['message' => 'Cancellation fee already paid for this booking.'], 422);
         }
 
-        $amount   = $booking->cancellation_fee_amount;
+        if (!in_array($booking->status, ['pending', 'confirmed'])) {
+            return response()->json(['message' => 'Only pending or confirmed bookings can be cancelled.'], 422);
+        }
+
+        if (!$booking->isWithinCancellationWindow()) {
+            return response()->json(['message' => 'No cancellation fee applies to this booking.'], 422);
+        }
+
+        $fee = $booking->calculateCancellationFee();
+
+        if ($fee <= 0) {
+            return response()->json(['message' => 'No cancellation fee applies to this booking.'], 422);
+        }
+
+        $booking->update([
+            'cancellation_fee_required' => true,
+            'cancellation_fee_amount'   => $fee,
+        ]);
+
+        $amount   = $fee;
         $currency = config('services.stripe.currency', 'usd');
 
         $returnUrl = URL::temporarySignedRoute(
