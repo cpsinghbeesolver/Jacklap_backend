@@ -161,6 +161,7 @@
             <th width="5%" style="text-align:center">#</th>
             <th width="33%" style="text-align:left">Service Name</th>
             <th width="12%" style="text-align:center">Class</th>
+            <th width="12%" style="text-align:center">Service Type</th>
             <th width="12%" style="text-align:center">Type</th>
             <th width="10%" style="text-align:center">Qty</th>
             <th width="14%" class="text-right">Unit Price</th>
@@ -173,6 +174,7 @@
             <td style="text-align:center">{{ $i + 1 }}</td>
             <td style="text-align:left">{{ $item->service_name }}</td>
             <td style="text-align:center">{{ $item->class_name ?? '—' }}</td>
+            <td style="text-align:center">{{ (int) $item->service_type === 1 ? 'Add-on' : 'Service' }}</td>
             <td style="text-align:center">{{ ucfirst($item->type ?? '—') }}</td>
             <td style="text-align:center">{{ $item->quantity }}</td>
             <td class="text-right">CAD {{ number_format($item->price, 2) }}</td>
