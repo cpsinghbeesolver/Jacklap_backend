@@ -149,7 +149,37 @@
 {{-- ── TITLE ────────────────────────────────────────────────────────────── --}}
 <h3 class="section-title">{{ $viewAsProvider ? 'PROVIDER PAYOUT INVOICE' : 'INVOICE' }}</h3>
 
-{{-- ── ITEMS TABLE — unchanged ─────────────────────────────────────────── --}}
+{{-- ── ITEMS TABLE ─────────────────────────────────────────── --}}
+<table>
+    <thead>
+        <tr>
+            <th width="5%">#</th>
+            <th width="33%">Service Name</th>
+            <th width="12%">Class</th>
+            <th width="12%">Type</th>
+            <th width="10%">Qty</th>
+            <th width="14%">Unit Price</th>
+            <th width="14%">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @forelse($booking->serviceItems as $i => $item)
+        <tr style="text-align:center">
+            <td>{{ $i + 1 }}</td>
+            <td>{{ $item->service_name }}</td>
+            <td>{{ $item->class_name ?? '—' }}</td>
+            <td>{{ ucfirst($item->type ?? '—') }}</td>
+            <td>{{ $item->quantity }}</td>
+            <td>CAD {{ number_format($item->price, 2) }}</td>
+            <td>CAD {{ number_format($item->total_price, 2) }}</td>
+        </tr>
+        @empty
+        <tr>
+            <td colspan="7" style="text-align:center">No items found</td>
+        </tr>
+        @endforelse
+    </tbody>
+</table>
 
 {{-- ── SUMMARY ──────────────────────────────────────────────────────────── --}}
 <table class="summary-table">
