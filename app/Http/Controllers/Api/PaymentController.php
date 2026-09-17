@@ -304,9 +304,9 @@ class PaymentController extends Controller
             return response()->json(['message' => 'Only pending or confirmed bookings can be cancelled.'], 422);
         }
 
-        if (!$booking->isWithinCancellationWindow()) {
-            return response()->json(['message' => 'No cancellation fee applies to this booking.'], 422);
-        }
+        // if (!$booking->isWithinCancellationWindow()) {
+        //     return response()->json(['message' => 'No cancellation fee applies to this booking.'], 422);
+        // }
 
         $fee = $booking->calculateCancellationFee();
 
