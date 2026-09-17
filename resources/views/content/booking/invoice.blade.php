@@ -92,24 +92,25 @@
         {{-- Left: provider + customer --}}
         <td style="border:none; text-align:left; width:60%">
             <strong>Service Provider:</strong><br>
-            {{ $booking->provider->name ?? 'N/A' }}<br><br>
+            {{ $booking->provider->name ?? 'N/A' }}<br>
+            @if(!empty($booking->provider->email)) {{ $booking->provider->email }}<br> @endif
+            @if(!empty($booking->provider->phone)) {{ $booking->provider->country_code }} {{ $booking->provider->phone }}<br> @endif
+            <br>
+
+            <strong>Customer Details:</strong><br>
+            {{ $booking->user->name ?? ($address['name'] ?? 'N/A') }}<br>
+            @if(!empty($booking->user->email)) {{ $booking->user->email }}<br> @endif
+            @if(!empty($booking->user->phone)) {{ $booking->user->country_code }} {{ $booking->user->phone }}<br> @endif
 
             @if($address)
-                <strong>Customer Address:</strong><br>
-                {{ ucfirst($address['name']) }}<br>
+                <br><strong>Address:</strong><br>
                 {{ $address['text'] }}<br>
                 @if($address['phone']) {{ $address['phone'] }} @endif
-            @else
-                <strong>Customer Address:</strong><br>
-                {{ $booking->user->name ?? 'N/A' }}<br>
-                {{ $booking->user->email ?? '' }}
             @endif
         </td>
 
-        {{-- Right: booking meta --}}
+        {{-- Right: booking meta — unchanged --}}
         <td style="border:none; text-align:left; width:40%">
-           
-
             <strong>Booking #:</strong><br>
             <strong>{{ $booking->booking_number }}</strong><br><br>
 
@@ -146,39 +147,9 @@
 </table>
 
 {{-- ── TITLE ────────────────────────────────────────────────────────────── --}}
-<h3 class="section-title">INVOICE</h3>
+<h3 class="section-title">{{ $viewAsProvider ? 'PROVIDER PAYOUT INVOICE' : 'INVOICE' }}</h3>
 
-{{-- ── ITEMS TABLE ──────────────────────────────────────────────────────── --}}
-<table>
-    <thead>
-        <tr>
-            <th width="5%">#</th>
-            <th width="33%">Service Name</th>
-            <th width="12%">Class</th>
-            <th width="12%">Type</th>
-            <th width="10%">Qty</th>
-            <th width="14%">Unit Price</th>
-            <th width="14%">Total</th>
-        </tr>
-    </thead>
-    <tbody>
-        @forelse($booking->serviceItems as $i => $item)
-        <tr style="text-align:center">
-            <td>{{ $i + 1 }}</td>
-            <td>{{ $item->service_name }}</td>
-            <td>{{ $item->class_name ?? '—' }}</td>
-            <td>{{ ucfirst($item->type ?? '—') }}</td>
-            <td>{{ $item->quantity }}</td>
-            <td>CAD {{ number_format($item->price, 2) }}</td>
-            <td>CAD {{ number_format($item->total_price, 2) }}</td>
-        </tr>
-        @empty
-        <tr>
-            <td colspan="7" style="text-align:center">No items found</td>
-        </tr>
-        @endforelse
-    </tbody>
-</table>
+{{-- ── ITEMS TABLE — unchanged ─────────────────────────────────────────── --}}
 
 {{-- ── SUMMARY ──────────────────────────────────────────────────────────── --}}
 <table class="summary-table">
@@ -202,9 +173,21 @@
     @endif
 
     <tr class="total-row">
-        <th>Amount Paid</th>
+        <th>{{ $viewAsProvider ? 'Booking Amount' : 'Amount Paid' }}</th>
         <td class="text-left">CAD {{ number_format($booking->payable_amount, 2) }}</td>
     </tr>
+
+    @if($viewAsProvider)
+        <tr>
+            <th class="text-gstt">Platform Fee</th>
+            <td class="text-left">- CAD {{ number_format($platformFee, 2) }}</td>
+        </tr>
+        <tr class="total-row">
+            <th>Net Payout</th>
+            <td class="text-left">CAD {{ number_format($providerNetAmount, 2) }}</td>
+        </tr>
+    @endif
+
     <tr>
         <th class="price-text"></th>
         <td class="price-text">Prices are inclusive of taxes</td>

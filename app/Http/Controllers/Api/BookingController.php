@@ -1801,19 +1801,42 @@ class BookingController extends Controller
         }
     }
 
-    public function downloadInvoice($id,Request $request)
+    public function downloadInvoice($id, Request $request)
     {
-        $booking = Booking::with(['user', 'provider', 'items'])->findOrFail($id);
-        
+        $booking = Booking::with(['user', 'provider', 'items', 'serviceItems'])->findOrFail($id);
+
         if ($request->filled('timezone')) {
-            $booking->start_datetime = Carbon::parse($booking->start_datetime)->setTimezone($request->timezone)->format('Y-m-d H:i:s');
-            $booking->end_datetime = Carbon::parse($booking->end_datetime)->setTimezone($request->timezone)->format('Y-m-d H:i:s');
+            $booking->start_datetime  = Carbon::parse($booking->start_datetime)->setTimezone($request->timezone)->format('Y-m-d H:i:s');
+            $booking->end_datetime    = Carbon::parse($booking->end_datetime)->setTimezone($request->timezone)->format('Y-m-d H:i:s');
             $booking->slot_start_time = Carbon::parse($booking->slot_start_time)->setTimezone($request->timezone)->format('H:i:s');
-            $booking->slot_end_time = Carbon::parse($booking->slot_end_time)->setTimezone($request->timezone)->format('H:i:s');
+            $booking->slot_end_time   = Carbon::parse($booking->slot_end_time)->setTimezone($request->timezone)->format('H:i:s');
         }
 
-        if (!auth()->user()->hasRole('admin')) {
-            abort_if($booking->user_id !== auth()->id(), 403, 'Unauthorized');
+        $authUser = auth()->user();
+
+        // Admin can view either side's invoice. The seeker who made the
+        // booking (user_id) can view theirs. The provider assigned to the
+        // booking (provider_id) can view theirs — this is the part that was
+        // missing before; only the exact user_id or an admin could download.
+        $isAdmin    = $authUser->hasRole('admin');
+        $isSeeker   = $booking->user_id === $authUser->id;
+        $isProvider = $booking->provider_id === $authUser->id;
+
+        abort_unless($isAdmin || $isSeeker || $isProvider, 403, 'Unauthorized');
+
+        // Which invoice layout to render. A logged-in provider viewing their
+        // own booking always gets the payout-style invoice (platform fee
+        // deducted, net amount shown). Admin defaults to the standard
+        // customer-facing invoice unless explicitly asked for the provider
+        // view via ?as=provider.
+        $viewAsProvider = $isProvider || ($isAdmin && $request->query('as') === 'provider');
+
+        $platformFee       = 0.00;
+        $providerNetAmount = (float) $booking->payable_amount;
+
+        if ($viewAsProvider) {
+            $platformFee       = $this->calculatePlatformFee($booking);
+            $providerNetAmount = round((float) $booking->payable_amount - $platformFee, 2);
         }
 
         $options = new Options();
@@ -1823,13 +1846,13 @@ class BookingController extends Controller
         $pdf = new Dompdf($options);
 
         $pdf->loadHtml(
-            view('content.booking.invoice', compact('booking'))->render()
+            view('content.booking.invoice', compact('booking', 'viewAsProvider', 'platformFee', 'providerNetAmount'))->render()
         );
 
         $pdf->setPaper('A4', 'portrait');
         $pdf->render();
 
-        $fileName = 'booking-invoice-' . $booking->booking_number . '.pdf';
+        $fileName  = 'booking-invoice-' . $booking->booking_number . ($viewAsProvider ? '-provider' : '') . '.pdf';
         $pdfOutput = $pdf->output();
 
         return response($pdfOutput, 200)
@@ -1837,5 +1860,26 @@ class BookingController extends Controller
             ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache');
+    }
+
+    /**
+     * Platform fee deducted from the provider's payout. Uses whatever was
+     * recorded on the booking itself (Booking::platform_fee /
+     * platform_fee_type) rather than the live Setting, since the fee/type in
+     * effect at booking time is what should apply retroactively — mirrors
+     * how Booking::calculateCancellationFee() reads its own 'perc' convention
+     * from Setting, but this reads the value already stored per-booking.
+     */
+    private function calculatePlatformFee(Booking $booking): float
+    {
+        if (empty($booking->platform_fee)) {
+            return 0.00;
+        }
+
+        if (in_array($booking->platform_fee_type, ['perc', 'percentage'], true)) {
+            return round(((float) $booking->payable_amount * (float) $booking->platform_fee) / 100, 2);
+        }
+
+        return round((float) $booking->platform_fee, 2); // flat fee
     }
 }
