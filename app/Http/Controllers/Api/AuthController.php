@@ -150,6 +150,11 @@ class AuthController extends Controller
         if($user->email_verified_at){
             $isloggedIn = 'true';
         }
+        if ($role === 'provider') {
+            $response->cookie('is_auth_incomplete', 'true', 120, '/', null, true, false);
+        } else {
+            $response->withoutCookie('is_auth_incomplete');
+        }
         return $response
             ->cookie('isLoggedIn', $isloggedIn, 120, '/', null, true, false)
             ->cookie('userRole', $role, 120, '/', null, true, false);
