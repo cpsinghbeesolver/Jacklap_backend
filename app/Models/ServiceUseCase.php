@@ -7,7 +7,8 @@ class ServiceUseCase extends Model
 {
     protected $fillable = [
         'service_category_id',
-        'title'
+        'title',
+        'is_full_day'
     ];
 
     public function category()

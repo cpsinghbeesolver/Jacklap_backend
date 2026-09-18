@@ -851,25 +851,32 @@ class ServiceCategoryController extends Controller
             $lat = $request->latitude;
             $lng = $request->longitude;
 
+            // Cheap, indexed pre-filter: shrinks the table to a rough ~100km box
+            // BEFORE any trig runs. This is what keeps the temp table small.
+            $latDelta = 100 / 111.0;
+            $lngDelta = 100 / (111.320 * cos(deg2rad($lat)));
+
+            $query->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
+                ->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta]);
+
+            // Exact distance, computed only for the already-shrunk set.
             $distanceQuery = "ROUND((6371 * acos(
-                cos(radians($lat)) 
-                * cos(radians(users.latitude)) 
-                * cos(radians(users.longitude) - radians($lng)) 
-                + sin(radians($lat)) 
+                cos(radians($lat))
+                * cos(radians(users.latitude))
+                * cos(radians(users.longitude) - radians($lng))
+                + sin(radians($lat))
                 * sin(radians(users.latitude))
             )), 2)";
 
-            $query->select('*')
-                ->selectRaw("$distanceQuery AS distance")
-                ->whereNotNull('latitude')
-                ->whereNotNull('longitude')
+            $query->selectRaw("users.*, $distanceQuery as distance")
                 ->having('distance', '<=', 100)
-                ->orderBy('distance', 'asc');
+                ->orderBy('distance', 'asc');   // <-- sort by distance, correctly, on a small set
 
         } else {
-            $query->select('*')
-            ->selectRaw('NULL as distance')
-            ->latest();
+            $query->selectRaw('users.*, NULL as distance')
+                ->latest();
         }
         $users = $query->paginate($perPage);
 
