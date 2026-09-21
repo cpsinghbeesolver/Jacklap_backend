@@ -244,25 +244,3 @@ Route::get('/form/layouts-horizontal', [HorizontalForm::class, 'index'])->name('
 
 // tables
 Route::get('/tables/basic', [TablesBasic::class, 'index'])->name('tables-basic');
-// routes/web.php
-if (app()->environment('local')) {
-    Route::get('/mail-preview/nakshatra', function () {
-        $user = \App\Models\User::first() ?? new \App\Models\User([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
-        $prediction = [
-            'birth_moon_sign' => 'Taurus',
-            'birth_moon_nakshatra' => 'Rohini',
-            'prediction' => [
-                'general' => 'Today brings a sense of clarity and calm, making it a good day to plan ahead rather than rush into decisions.',
-                'career' => 'Professional matters move forward smoothly if you stay organized and communicate clearly with colleagues.',
-                'love' => 'Relationships deepen through honest conversation. Single natives may find themselves drawn to meaningful connections.',
-                'health' => 'Energy levels remain stable. Light exercise and mindful eating support overall wellbeing today.',
-            ],
-        ];
-
-        return new \App\Mail\DailyNakshatraPredictionMail($user, $prediction);
-    });
-}
