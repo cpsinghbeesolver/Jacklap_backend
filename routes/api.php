@@ -97,7 +97,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/cart/store', [CartController::class, 'storeCart']);
     Route::delete('/cart/clear', [CartController::class, 'clearCart']);
-    Route::post('/switch-role', [AuthController::class, 'switchRole']);
+    Route::post('/user/switch-role', [AuthController::class, 'switchRole']);
     Route::post('/booking/store', [BookingController::class, 'storeBooking']);
     Route::put('/booking/update/{id}', [BookingController::class, 'updateBooking']);
     Route::get('/booking/{id}/slots',     [BookingController::class, 'listSlots']);
