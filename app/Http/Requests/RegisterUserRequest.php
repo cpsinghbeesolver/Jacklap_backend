@@ -38,23 +38,18 @@ class RegisterUserRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Check email
-            $emailUser = User::where('email', $this->email)->first();
 
-            if ($emailUser && $emailUser->hasRole($this->role)) {
+            if (User::where('email', $this->email)->exists()) {
                 $validator->errors()->add(
                     'email',
-                    "This email is already registered as a {$this->role}."
+                    'This email is already registered.'
                 );
             }
 
-            // Check phone
-            $phoneUser = User::where('phone', $this->phone)->first();
-
-            if ($phoneUser && $phoneUser->hasRole($this->role)) {
+            if (User::where('phone', $this->phone)->exists()) {
                 $validator->errors()->add(
                     'phone',
-                    "This phone number is already registered as a {$this->role}."
+                    'This phone number is already registered.'
                 );
             }
         });
