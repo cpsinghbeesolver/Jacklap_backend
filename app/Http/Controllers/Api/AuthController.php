@@ -149,15 +149,7 @@ class AuthController extends Controller
         // isLoggedIn is common for all users
         $isLoggedIn = $user->email_verified_at ? 'true' : 'false';
 
-        $response->cookie(
-            'isLoggedIn',
-            $isLoggedIn,
-            120,
-            '/',
-            null,
-            true,
-            false
-        );
+        
 
         /*
         |--------------------------------------------------------------------------
@@ -166,7 +158,15 @@ class AuthController extends Controller
         */
 
         if ($hasSingleRole) {
-
+            $response->cookie(
+                'isLoggedIn',
+                $isLoggedIn,
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
             // Provider profile incomplete
             if ($role === 'provider' && $user->profile_step < 3) {
                 $response->cookie(
@@ -205,6 +205,7 @@ class AuthController extends Controller
         */
 
         return $response
+            ->withoutCookie('isLoggedIn')
             ->withoutCookie('userRole')
             ->withoutCookie('is_auth_incomplete');
     }
