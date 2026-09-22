@@ -76,56 +76,55 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-            'device_token'  => 'nullable|string',
-            'device_name'   => 'nullable|string',
-            'device_type'   => 'nullable|integer',
+            'email'        => 'required|email',
+            'password'     => 'required',
+            'device_token' => 'nullable|string',
+            'device_name'  => 'nullable|string',
+            'device_type'  => 'nullable|integer',
         ]);
-        $user = User::where('email', $request->email)->first();  
-        
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials',
             ], 400);
         }
 
-        // $credentials = $request->only('email', 'password');
-
-        // if(!Auth::attempt($credentials)) {
-        //     return response()->json(['message' => 'Invalid credentials'], 400);
-        // }
-
-        // $request->session()->regenerate();
         // Create Sanctum token
         $token = $user->createToken(
             $request->device_name ?? 'NextJS'
         )->plainTextToken;
 
-        //$user = $request->user();
+        // Get all roles
+        $roles = $user->getRoleNames()->values()->toArray();
 
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 500);
-        }
-        if ($user) {
-            $user->setAttribute(
-                'role',
-                $user->hasRole('provider') ? 'provider' : 'seeker'
-            );
-        }
-        if($user->hasRole('provider')){
-            // if (!$user->is_checked) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Your account is under review. Please wait for approval.',
-            //     ], 400);
-            // }
-            $user->load(['services','addonServices', 'professionalDetail', 'media','media.certificates', 'bankDetail','languages']);
+        // Check if user has only one role
+        $hasSingleRole = count($roles) === 1;
+
+        // Active role only for single-role users
+        $role = $hasSingleRole ? $roles[0] : null;
+
+        // Only load provider data if user has provider role
+        if ($user->hasRole('provider')) {
+            $user->load([
+                'services',
+                'addonServices',
+                'professionalDetail',
+                'media',
+                'media.certificates',
+                'bankDetail',
+                'languages'
+            ]);
         }
 
-        $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+        // Only set active role when user has a single role
+        if ($hasSingleRole) {
+            $user->setAttribute('role', $role);
+        }
 
+        // Save user device
         if ($request->device_token) {
             UserDevice::updateOrCreate(
                 [
@@ -140,25 +139,162 @@ class AuthController extends Controller
         }
 
         $response = response()->json([
-            'success' => true,
-            'message' => 'Login successful.',
-            'token'   => $token,
+            'success'    => true,
+            'message'    => 'Login successful.',
+            'token'      => $token,
             'token_type' => 'Bearer',
-            'user'    => $user
+            'user'       => $user,
         ]);
-        $isloggedIn = $user->email_verified_at ? 'true' : 'false';
-        if($user->email_verified_at){
-            $isloggedIn = 'true';
+
+        // isLoggedIn is common for all users
+        $isLoggedIn = $user->email_verified_at ? 'true' : 'false';
+
+        $response->cookie(
+            'isLoggedIn',
+            $isLoggedIn,
+            120,
+            '/',
+            null,
+            true,
+            false
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Single Role User
+        |--------------------------------------------------------------------------
+        */
+
+        if ($hasSingleRole) {
+
+            // Provider profile incomplete
+            if ($role === 'provider' && $user->profile_step < 3) {
+                $response->cookie(
+                    'is_auth_incomplete',
+                    'true',
+                    120,
+                    '/',
+                    null,
+                    true,
+                    false
+                );
+            } else {
+                $response->withoutCookie('is_auth_incomplete');
+            }
+
+            // Set active role
+            return $response->cookie(
+                'userRole',
+                $role,
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
         }
-        if ($role === 'provider' && $user->profile_step < 3) {
-            $response->cookie('is_auth_incomplete', 'true', 120, '/', null, true, false);
-        } else {
-            $response->withoutCookie('is_auth_incomplete');
-        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Multiple Role User
+        |--------------------------------------------------------------------------
+        |
+        | Do not set any active role.
+        | User must select a role and call switch-role API.
+        |
+        */
+
         return $response
-            ->cookie('isLoggedIn', $isloggedIn, 120, '/', null, true, false)
-            ->cookie('userRole', $role, 120, '/', null, true, false);
+            ->withoutCookie('userRole')
+            ->withoutCookie('is_auth_incomplete');
     }
+    // public function login(Request $request)
+    // {
+    //     $request->validate([
+    //         'email'    => 'required|email',
+    //         'password' => 'required',
+    //         'device_token'  => 'nullable|string',
+    //         'device_name'   => 'nullable|string',
+    //         'device_type'   => 'nullable|integer',
+    //     ]);
+    //     $user = User::where('email', $request->email)->first();  
+        
+    //     if (! $user || ! Hash::check($request->password, $user->password)) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Invalid credentials',
+    //         ], 400);
+    //     }
+
+    //     // $credentials = $request->only('email', 'password');
+
+    //     // if(!Auth::attempt($credentials)) {
+    //     //     return response()->json(['message' => 'Invalid credentials'], 400);
+    //     // }
+
+    //     // $request->session()->regenerate();
+    //     // Create Sanctum token
+    //     $token = $user->createToken(
+    //         $request->device_name ?? 'NextJS'
+    //     )->plainTextToken;
+
+    //     //$user = $request->user();
+
+    //     if (!$user) {
+    //         return response()->json(['message' => 'User not found'], 500);
+    //     }
+        
+    //     if ($user) {
+    //         $user->setAttribute(
+    //             'role',
+    //             $user->hasRole('provider') ? 'provider' : 'seeker'
+    //         );
+    //     }
+    //     if($user->hasRole('provider')){
+    //         // if (!$user->is_checked) {
+    //         //     return response()->json([
+    //         //         'success' => false,
+    //         //         'message' => 'Your account is under review. Please wait for approval.',
+    //         //     ], 400);
+    //         // }
+    //         $user->load(['services','addonServices', 'professionalDetail', 'media','media.certificates', 'bankDetail','languages']);
+    //     }
+
+    //     $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+
+    //     if ($request->device_token) {
+    //         UserDevice::updateOrCreate(
+    //             [
+    //                 'device_token' => $request->device_token,
+    //             ],
+    //             [
+    //                 'user_id'     => $user->id,
+    //                 'device_name' => $request->device_name,
+    //                 'device_type' => $request->device_type,
+    //             ]
+    //         );
+    //     }
+
+    //     $response = response()->json([
+    //         'success' => true,
+    //         'message' => 'Login successful.',
+    //         'token'   => $token,
+    //         'token_type' => 'Bearer',
+    //         'user'    => $user
+    //     ]);
+    //     $isloggedIn = $user->email_verified_at ? 'true' : 'false';
+    //     if($user->email_verified_at){
+    //         $isloggedIn = 'true';
+    //     }
+    //     if ($role === 'provider' && $user->profile_step < 3) {
+    //         $response->cookie('is_auth_incomplete', 'true', 120, '/', null, true, false);
+    //     } else {
+    //         $response->withoutCookie('is_auth_incomplete');
+    //     }
+    //     return $response
+    //         ->cookie('isLoggedIn', $isloggedIn, 120, '/', null, true, false)
+    //         ->cookie('userRole', $role, 120, '/', null, true, false);
+    // }
 
     /**
      * @OA\Post(
