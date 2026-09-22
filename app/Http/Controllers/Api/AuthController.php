@@ -160,6 +160,237 @@ class AuthController extends Controller
             ->cookie('userRole', $role, 120, '/', null, true, false);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/user/switch-role",
+     *     tags={"Web Auth"},
+     *     summary="Switch user role",
+     *     description="Switch the active role of an authenticated user. The user must already have the requested role.",
+     *     operationId="switchUserRole",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"role"},
+     *             @OA\Property(
+     *                 property="role",
+     *                 type="string",
+     *                 enum={"provider","seeker"},
+     *                 example="provider",
+     *                 description="Role to switch to"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Role switched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="success",
+     *                 type="boolean",
+     *                 example=true
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Switched to provider successfully."
+     *             ),
+     *             @OA\Property(
+     *                 property="role",
+     *                 type="string",
+     *                 example="provider"
+     *             ),
+     *             @OA\Property(
+     *                 property="roles",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="string",
+     *                     example="seeker"
+     *                 ),
+     *                 example={"seeker","provider"}
+     *             ),
+     *             @OA\Property(
+     *                 property="user",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="id",
+     *                     type="integer",
+     *                     example=1
+     *                 ),
+     *                 @OA\Property(
+     *                     property="name",
+     *                     type="string",
+     *                     example="Alex Morgan"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="email",
+     *                     type="string",
+     *                     example="alex.morgan@example.com"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="dob",
+     *                     type="string",
+     *                     format="date",
+     *                     example="1998-01-01"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="gender",
+     *                     type="string",
+     *                     example="male"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="phone",
+     *                     type="string",
+     *                     example="9876543210"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="role",
+     *                     type="string",
+     *                     example="provider"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="email_verified_at",
+     *                     type="string",
+     *                     format="date-time",
+     *                     example="2026-02-24T05:36:45.000000Z"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="professionalDetail",
+     *                     type="string",
+     *                     example="yes"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=403,
+     *         description="User does not have the requested role",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="success",
+     *                 type="boolean",
+     *                 example=false
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="You are not registered as a provider."
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="The role field is required."
+     *             ),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Unauthenticated."
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function switchRole(Request $request)
+    {
+        $request->validate([
+            'role' => ['required', 'string', 'in:provider,seeker'],
+        ]);
+
+        $user = $request->user();
+
+        // Check if user has this role
+        if (!$user->hasRole($request->role)) {
+            return response()->json([
+                'success' => false,
+                'message' => "You are not registered as a {$request->role}.",
+            ], 403);
+        }
+
+        $role = $request->role;
+
+        // Load data according to selected role
+        if ($role === 'provider') {
+            $user->load([
+                'services',
+                'addonServices',
+                'professionalDetail',
+                'media',
+                'media.certificates',
+                'bankDetail',
+                'languages',
+            ]);
+        }
+
+        // Set selected role for frontend
+        $user->setAttribute('role', $role);
+
+        $response = response()->json([
+            'success' => true,
+            'message' => "Switched to {$role} successfully.",
+            'role' => $role,
+            'roles' => $user->getRoleNames()->values()->toArray(),
+            'user' => $user,
+        ]);
+
+        $isLoggedIn = $user->email_verified_at ? 'true' : 'false';
+
+        // Provider profile completion
+        if ($role === 'provider' && $user->profile_step < 3) {
+            $response->cookie(
+                'is_auth_incomplete',
+                'true',
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
+        } else {
+            $response->withoutCookie('is_auth_incomplete');
+        }
+
+        return $response
+            ->cookie(
+                'isLoggedIn',
+                $isLoggedIn,
+                120,
+                '/',
+                null,
+                true,
+                false
+            )
+            ->cookie(
+                'userRole',
+                $role,
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
+    }
+
     public function logout(Request $request)
     {
         Auth::guard('web')->logout();
