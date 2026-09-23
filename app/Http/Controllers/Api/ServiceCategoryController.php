@@ -531,7 +531,6 @@ class ServiceCategoryController extends Controller
     *     )
     * )
     */
-
     public function getUsersByServiceCategory(Request $request)
     {
         $request->validate([
@@ -583,6 +582,7 @@ class ServiceCategoryController extends Controller
             'dates.*.time'        => 'nullable|date_format:H:i',
             'dates_match'         => 'nullable|in:any,all', // default: all
             'slot_duration'       => 'nullable|integer|min:1',
+            'timezone'            => 'required_with:dates|timezone',
         ]);
 
         $perPage = $request->per_page ?? 10;
@@ -708,24 +708,26 @@ class ServiceCategoryController extends Controller
                 $q->whereHas('languages', function ($q2) use ($request) {
                     $q2->whereIn('language_id', $request->language_ids);
                 });
-            })->when($request->dates, function ($q) use ($request) {
+            })
+            ->when($request->dates, function ($q) use ($request) {
 
                 $dates     = $request->dates;
                 $matchType = $request->dates_match ?? 'all';
                 $duration  = (int) ($request->slot_duration ?? 60);
+                $clientTz  = $request->timezone; // e.g. "Asia/Kolkata"
 
                 $applySlotConstraint = function (
                     $subQ,
                     $day,
                     $time,
-                    $dateTime
+                    $dateTimeUtc
                 ) use ($duration) {
 
                     /*
-                    * Check weekly availability.
-                    *
-                    * availability_slots.opening_time / closing_time
-                    * should receive ONLY time, e.g. 12:30:00
+                    * availability_slots is stored in normal/local time
+                    * (e.g. 09:00-17:00). $day/$time here are ALSO in the
+                    * client's local time (untouched, as sent) — same clock
+                    * on both sides, no conversion needed.
                     */
                     $subQ->whereHas('availabilitySlots', function ($aq) use (
                         $day,
@@ -742,11 +744,135 @@ class ServiceCategoryController extends Controller
                     });
 
                     /*
-                    * Check existing bookings.
-                    *
-                    * bookings.start_datetime / end_datetime
-                    * should receive FULL datetime.
+                    * bookings.start_datetime / end_datetime are stored in UTC.
+                    * We've already converted the client's local request time
+                    * into UTC ($dateTimeUtc) using PHP/Carbon before this
+                    * closure runs, so this compares UTC against UTC directly
+                    * — no CONVERT_TZ or MySQL timezone tables needed.
                     */
+                    if ($dateTimeUtc) {
+
+                        $subQ->whereDoesntHave('providerBookings', function ($bq) use (
+                            $dateTimeUtc,
+                            $duration
+                        ) {
+
+                            $bq->whereIn('status', [
+                                'confirmed',
+                                'in_progress'
+                            ])
+                            ->whereRaw(
+                                'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE)
+                                AND end_datetime > ?',
+                                [
+                                    $dateTimeUtc,
+                                    $duration,
+                                    $dateTimeUtc
+                                ]
+                            );
+                        });
+                    }
+                };
+
+
+                $q->where(function ($outer) use (
+                    $dates,
+                    $matchType,
+                    $applySlotConstraint,
+                    $clientTz
+                ) {
+
+                    foreach ($dates as $entry) {
+
+                        $date = $entry['date'];
+                        $time = $entry['time'] ?? null;
+
+                        // Day-of-week stays in the client's local calendar date —
+                        // untouched, exactly as sent.
+                        $day = strtolower(
+                            \Carbon\Carbon::parse($date)->format('l')
+                        );
+
+                        if ($time) {
+
+                            // Local time-of-day, untouched — used for availability_slots.
+                            $timeOnly = \Carbon\Carbon::createFromFormat('H:i', $time)->format('H:i:s');
+
+                            // Build the same local moment, but tagged with the client's
+                            // timezone, then convert ONLY this copy to UTC — used for
+                            // the bookings check. The original $date/$time are never
+                            // mutated.
+                            $dateTimeUtc = \Carbon\Carbon::createFromFormat(
+                                    'Y-m-d H:i',
+                                    "$date $time",
+                                    $clientTz
+                                )
+                                ->setTimezone('UTC')
+                                ->format('Y-m-d H:i:s');
+
+                        } else {
+                            $timeOnly    = null;
+                            $dateTimeUtc = null;
+                        }
+
+                        if ($matchType === 'any') {
+
+                            $outer->orWhere(function ($inner) use (
+                                $applySlotConstraint,
+                                $day,
+                                $timeOnly,
+                                $dateTimeUtc
+                            ) {
+
+                                $applySlotConstraint(
+                                    $inner,
+                                    $day,
+                                    $timeOnly,
+                                    $dateTimeUtc
+                                );
+                            });
+
+                        } else {
+
+                            $applySlotConstraint(
+                                $outer,
+                                $day,
+                                $timeOnly,
+                                $dateTimeUtc
+                            );
+                        }
+                    }
+                });
+            });
+            /*->when($request->dates, function ($q) use ($request) {
+
+                $dates     = $request->dates;
+                $matchType = $request->dates_match ?? 'all';
+                $duration  = (int) ($request->slot_duration ?? 60);
+
+                $applySlotConstraint = function (
+                    $subQ,
+                    $day,
+                    $time,
+                    $dateTime
+                ) use ($duration) {
+
+                   
+                    $subQ->whereHas('availabilitySlots', function ($aq) use (
+                        $day,
+                        $time
+                    ) {
+
+                        $aq->where('day', $day)
+                        ->where('status', 1);
+
+                        if ($time) {
+                            $aq->where('opening_time', '<=', $time)
+                            ->where('closing_time', '>=', $time);
+                        }
+                    });
+
+                 
                     if ($dateTime) {
 
                         $subQ->whereDoesntHave('providerBookings', function ($bq) use (
@@ -783,20 +909,11 @@ class ServiceCategoryController extends Controller
                         $date = $entry['date'];
                         $time = $entry['time'] ?? null;
 
-                        /*
-                        * Example:
-                        *
-                        * 2026-09-04 -> friday
-                        */
                         $day = strtolower(
                             \Carbon\Carbon::parse($date)->format('l')
                         );
 
-                        /*
-                        * TIME for availability_slots
-                        *
-                        * 12:30 -> 12:30:00
-                        */
+                    
                         $timeOnly = $time
                             ? \Carbon\Carbon::createFromFormat(
                                 'H:i',
@@ -804,12 +921,7 @@ class ServiceCategoryController extends Controller
                             )->format('H:i:s')
                             : null;
 
-                        /*
-                        * FULL DATETIME for bookings
-                        *
-                        * 2026-09-04 + 12:30
-                        * -> 2026-09-04 12:30:00
-                        */
+                        
                         $dateTime = $time
                             ? $date . ' ' . $time . ':00'
                             : null;
@@ -843,7 +955,7 @@ class ServiceCategoryController extends Controller
                         }
                     }
                 });
-            });
+            });*/
 
         //Apply distance logic ONLY if lat & long present
         if ($request->filled('latitude') && $request->filled('longitude')) {
