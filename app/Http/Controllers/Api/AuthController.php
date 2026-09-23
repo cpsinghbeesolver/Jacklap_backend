@@ -878,7 +878,8 @@ class AuthController extends Controller
                 'dob'                => $user->dob,
                 'gender'             => $user->gender,
                 'phone'              => $user->phone,
-                'role'               => $user->getRoleNames()->first(),
+                'role'               => $validated['role'],
+                'roles'     => $user->getRoleNames()->values()->toArray(),
                 'languages'          => $user->languages
             ],
         ], 201);
@@ -1190,7 +1191,13 @@ class AuthController extends Controller
         )->plainTextToken;
 
         $user->load(['roles', 'professionalDetail', 'media', 'bankDetail']);
-        $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+
+        if ($request->role) {
+            $role = $request->role;
+        } else {
+            $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+        }
+
         $response = response()->json([
             'success' => true,
             'message' => 'OTP verified successfully.',
@@ -1353,7 +1360,12 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         $user->load(['roles', 'professionalDetail', 'media', 'bankDetail']);
-        $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+        if ($request->role) {
+            $role = $request->role;
+        } else {
+            $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+        }
+        //$role = $user->hasRole('provider') ? 'provider' : 'seeker';
         $response = response()->json([
             'success' => true,
             'message' => 'OTP verified successfully.',
