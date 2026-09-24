@@ -427,6 +427,13 @@ class ServiceCategoryController extends Controller
  *         description="Slot length in minutes, used both to check booking overlaps for the 'dates' filter and to generate each provider's 'requested_availability' slots. Defaults to 60.",
  *         @OA\Schema(type="integer", minimum=1, example=60)
  *     ),
+    *     @OA\Parameter(
+    *         name="timezone",
+    *         in="query",
+    *         required=false,
+    *         description="Timezone of users location",
+    *         @OA\Schema(type="string", example="Asia/Kolkata")
+    *     ),
     *     @OA\RequestBody(
     *         required=false,
     *         description="Optional body for service_with_class and service_with_item filters (can also be sent as query params depending on frontend setup)",
