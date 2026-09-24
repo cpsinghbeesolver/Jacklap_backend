@@ -1364,7 +1364,15 @@ class BookingController extends Controller
             $query->whereIn('status', $statuses);
         }
 
-        if ($user->hasRole('provider')) {
+        $roles = $user->getRoleNames();
+
+        if ($roles->count() > 1 && $request->filled('role')) {
+            if ($request->role === 'provider') {
+                $query->where('provider_id', $user->id);
+            } elseif ($request->role === 'seeker') {
+                $query->where('user_id', $user->id);
+            }
+        } elseif ($user->hasRole('provider')) {
             $query->where('provider_id', $user->id);
         } else {
             $query->where('user_id', $user->id);
@@ -1433,18 +1441,39 @@ class BookingController extends Controller
             ], 404);
         }
 
-        // Authorization check
-        if (
-            $user->hasRole('provider') && $booking->provider_id != $user->id ||
-            !$user->hasRole('provider') && $booking->user_id != $user->id
-        ) {
+        $roles = $user->getRoleNames();
+
+        $role = $roles->count() > 1 && $request->filled('role')
+            ? $request->role
+            : ($user->hasRole('provider') ? 'provider' : 'seeker');
+
+        // Validate requested role belongs to user
+        if (!$user->hasRole($role)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access'
+                'message' => 'You do not have this role.'
             ], 403);
         }
 
-        if ($user->hasRole('seeker')) {
+        // Authorization check based on active role
+        if ($role === 'provider') {
+            if ($booking->provider_id != $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 403);
+            }
+        } else {
+            if ($booking->user_id != $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 403);
+            }
+        }
+
+        // OTP is visible only for seeker
+        if ($role === 'seeker') {
             $booking->makeVisible('otp');
         }
 
