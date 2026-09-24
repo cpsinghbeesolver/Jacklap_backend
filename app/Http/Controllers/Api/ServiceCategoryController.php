@@ -589,7 +589,7 @@ class ServiceCategoryController extends Controller
             'dates.*.time'        => 'nullable|date_format:H:i',
             'dates_match'         => 'nullable|in:any,all', // default: all
             'slot_duration'       => 'nullable|integer|min:1',
-            'timezone'            => 'required_with:dates|timezone',
+            'timezone'            => 'required_with:dates|timezone:all_with_bc',
         ]);
 
         $perPage = $request->per_page ?? 10;
