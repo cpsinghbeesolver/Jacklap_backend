@@ -1439,20 +1439,7 @@ class BookingController extends Controller
     {
         $user = auth()->user();
 
-        $booking = Booking::select([
-            'id',
-            'status',
-            'payable_amount',
-            'selected_days',
-            'slot_start_time',
-            'start_datetime',
-            'slot_end_time',
-            'slot_date',
-            'duration_type',
-            'end_datetime',
-            'booking_number',
-            'address_json',
-        ])->with([
+        $booking = Booking::with([
                 'items.service:id,name,is_default,type',
                 'addonItems.addonService:id,name,type,price',
                 'provider:id,name,image',
