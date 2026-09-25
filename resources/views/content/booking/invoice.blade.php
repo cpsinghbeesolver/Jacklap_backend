@@ -55,6 +55,11 @@
         .text-gstt { border-bottom: none; }
         td.price-text { border-bottom: none; text-transform: capitalize; }
         th.price-text { border-bottom: none; }
+
+        /* All price-carrying values — items table columns and every
+           summary-table value cell — align right consistently. */
+        .text-right { text-align: right !important; }
+        .summary-table td.text-left { text-align: right; } /* class name kept, alignment fixed */
     </style>
 </head>
 <body>
@@ -92,24 +97,25 @@
         {{-- Left: provider + customer --}}
         <td style="border:none; text-align:left; width:60%">
             <strong>Service Provider:</strong><br>
-            {{ $booking->provider->name ?? 'N/A' }}<br><br>
+            {{ $booking->provider->name ?? 'N/A' }}<br>
+            @if(!empty($booking->provider->email)) {{ $booking->provider->email }}<br> @endif
+            @if(!empty($booking->provider->phone)) {{ $booking->provider->country_code }} {{ $booking->provider->phone }}<br> @endif
+            <br>
+
+            <strong>Customer Details:</strong><br>
+            {{ $booking->user->name ?? ($address['name'] ?? 'N/A') }}<br>
+            @if(!empty($booking->user->email)) {{ $booking->user->email }}<br> @endif
+            @if(!empty($booking->user->phone)) {{ $booking->user->country_code }} {{ $booking->user->phone }}<br> @endif
 
             @if($address)
-                <strong>Customer:</strong><br>
-                {{ ucfirst($address['name']) }}<br>
+                <br><strong>Address:</strong><br>
                 {{ $address['text'] }}<br>
                 @if($address['phone']) {{ $address['phone'] }} @endif
-            @else
-                <strong>Customer:</strong><br>
-                {{ $booking->user->name ?? 'N/A' }}<br>
-                {{ $booking->user->email ?? '' }}
             @endif
         </td>
 
         {{-- Right: booking meta --}}
         <td style="border:none; text-align:left; width:40%">
-           
-
             <strong>Booking #:</strong><br>
             <strong>{{ $booking->booking_number }}</strong><br><br>
 
@@ -146,31 +152,33 @@
 </table>
 
 {{-- ── TITLE ────────────────────────────────────────────────────────────── --}}
-<h3 class="section-title">INVOICE</h3>
+<h3 class="section-title">{{ $viewAsProvider ? 'PROVIDER PAYOUT INVOICE' : 'INVOICE' }}</h3>
 
 {{-- ── ITEMS TABLE ──────────────────────────────────────────────────────── --}}
-<table>
+<table class="items-table">
     <thead>
         <tr>
-            <th width="5%">#</th>
-            <th width="33%">Service Name</th>
-            <th width="12%">Class</th>
-            <th width="12%">Type</th>
-            <th width="10%">Qty</th>
-            <th width="14%">Unit Price</th>
-            <th width="14%">Total</th>
+            <th width="5%" style="text-align:center">#</th>
+            <th width="29%" style="text-align:left">Service Name</th>
+            <th width="10%" style="text-align:center">Class</th>
+            <th width="10%" style="text-align:center">Service Type</th>
+            <th width="10%" style="text-align:center">Type</th>
+            <th width="10%" style="text-align:center">Qty</th>
+            <th width="13%" class="text-right">Unit Price</th>
+            <th width="13%" class="text-right">Total</th>
         </tr>
     </thead>
     <tbody>
         @forelse($booking->serviceItems as $i => $item)
-        <tr style="text-align:center">
-            <td>{{ $i + 1 }}</td>
-            <td>{{ $item->service_name }}</td>
-            <td>{{ $item->class_name ?? '—' }}</td>
-            <td>{{ ucfirst($item->type ?? '—') }}</td>
-            <td>{{ $item->quantity }}</td>
-            <td>INR {{ number_format($item->price, 2) }}</td>
-            <td>INR {{ number_format($item->total_price, 2) }}</td>
+        <tr>
+            <td style="text-align:center">{{ $i + 1 }}</td>
+            <td style="text-align:left">{{ $item->service_name }}</td>
+            <td style="text-align:center">{{ $item->class_name ?? '—' }}</td>
+            <td style="text-align:center">{{ (int) $item->service_type === 1 ? 'Add-on' : 'Service' }}</td>
+            <td style="text-align:center">{{ ucfirst($item->type ?? '—') }}</td>
+            <td style="text-align:center">{{ $item->quantity }}</td>
+            <td class="text-right">CAD {{ number_format($item->price, 2) }}</td>
+            <td class="text-right">CAD {{ number_format($item->total_price, 2) }}</td>
         </tr>
         @empty
         <tr>
@@ -184,30 +192,42 @@
 <table class="summary-table">
     <tr>
         <th class="text-gstt">Subtotal</th>
-        <td class="text-left">INR {{ number_format($booking->total_amount, 2) }}</td>
+        <td class="text-left">CAD {{ number_format($booking->total_amount, 2) }}</td>
     </tr>
 
     @if($booking->discount > 0)
     <tr>
         <th>Discount</th>
-        <td class="text-left">- INR {{ number_format($booking->discount, 2) }}</td>
+        <td class="text-left">- CAD {{ number_format($booking->discount, 2) }}</td>
     </tr>
     @endif
 
     @if($booking->tax > 0)
     <tr>
         <th class="text-gstt">Tax</th>
-        <td class="text-left">INR {{ number_format($booking->tax, 2) }}</td>
+        <td class="text-left">CAD {{ number_format($booking->tax, 2) }}</td>
     </tr>
     @endif
 
     <tr class="total-row">
-        <th>Amount Paid</th>
-        <td class="text-left">INR {{ number_format($booking->payable_amount, 2) }}</td>
+        <th>{{ $viewAsProvider ? 'Booking Amount' : 'Amount Paid' }}</th>
+        <td class="text-left">CAD {{ number_format($booking->payable_amount, 2) }}</td>
     </tr>
+
+    @if($viewAsProvider)
+        <tr>
+            <th class="text-gstt">Platform Fee</th>
+            <td class="text-left">- CAD {{ number_format($platformFee, 2) }}</td>
+        </tr>
+        <tr class="total-row">
+            <th>Net Payout</th>
+            <td class="text-left">CAD {{ number_format($providerNetAmount, 2) }}</td>
+        </tr>
+    @endif
+
     <tr>
         <th class="price-text"></th>
-        <td class="price-text">Prices are inclusive of taxes</td>
+        <td class="price-text text-right">Prices are inclusive of taxes</td>
     </tr>
 </table>
 

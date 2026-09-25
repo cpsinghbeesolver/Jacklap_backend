@@ -61,6 +61,12 @@
       "slug": "license-type"
     },
     {
+      "url": "/service-use-case",
+      "icon": "menu-icon tf-icons ri-file-list-3-line",
+      "name": "Service Use Cases",
+      "slug": "service-use-case"
+    },
+    {
       "url": "/payout-requests",
       "icon": "menu-icon tf-icons ri-bank-card-line",
       "name": "Payout Requests",

@@ -743,24 +743,28 @@ class StripeConnectController extends Controller
                 'stripe_payouts_enabled' => $payoutsEnabled,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => $onboardingComplete
-                    ? 'Stripe onboarding completed successfully.'
-                    : 'Stripe onboarding is incomplete.',
+            if(is_null(config('app.frontend_url'))){
+                return response()->json([
+                    'success' => true,
+                    'message' => $onboardingComplete
+                        ? 'Stripe onboarding completed successfully.'
+                        : 'Stripe onboarding is incomplete.',
 
-                'status' => $onboardingComplete
-                    ? 'complete'
-                    : 'incomplete',
+                    'status' => $onboardingComplete
+                        ? 'complete'
+                        : 'incomplete',
 
-                'onboarding_complete' => $onboardingComplete,
-                'charges_enabled' => $chargesEnabled,
-                'payouts_enabled' => $payoutsEnabled,
-                'details_submitted' => $detailsSubmitted,
+                    'onboarding_complete' => $onboardingComplete,
+                    'charges_enabled' => $chargesEnabled,
+                    'payouts_enabled' => $payoutsEnabled,
+                    'details_submitted' => $detailsSubmitted,
 
-                'stripe_account_id' => $user->stripe_account_id,
-            ]);
-
+                    'stripe_account_id' => $user->stripe_account_id,
+                ]);
+            }else{
+                $status = $onboardingComplete ? 'complete' : 'incomplete';
+                return redirect(config('app.frontend_url'));//. '/stripe/onboarding-' . $status);
+            }
         } catch (\Throwable $e) {
 
             \Log::error('Stripe Connect onboarding return failed', [
@@ -768,17 +772,20 @@ class StripeConnectController extends Controller
                 'stripe_account_id' => $user->stripe_account_id,
                 'error' => $e->getMessage(),
             ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Unable to verify Stripe onboarding status.',
-                'status' => 'incomplete',
-                'onboarding_complete' => false,
-                'charges_enabled' => false,
-                'payouts_enabled' => false,
-            ], 500);
+            if(is_null(config('app.frontend_url'))){
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to verify Stripe onboarding status.',
+                    'status' => 'incomplete',
+                    'onboarding_complete' => false,
+                    'charges_enabled' => false,
+                    'payouts_enabled' => false,
+                ], 500);
+            }else{
+                return redirect(config('app.frontend_url') . '/stripe/onboarding-error?reason=verification_failed');
+            }
         }
-    }
+    }           
 
     /**
      * Pull charges_enabled/payouts_enabled/details_submitted out of a v2

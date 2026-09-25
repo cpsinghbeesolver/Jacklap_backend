@@ -1123,7 +1123,7 @@ class UserDetailsController extends Controller
 
         $user->save();
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'message' => 'Media uploaded successfully',
         ], 201);
@@ -1299,6 +1299,7 @@ class UserDetailsController extends Controller
      *     )
      * )
      */
+
     public function storeAvailabilitySlots(Request $request)
     {
         $user = $request->user();
@@ -1309,30 +1310,55 @@ class UserDetailsController extends Controller
             'availability_slots.*.day'          => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'availability_slots.*.status'       => 'required|integer|in:0,1',
             'availability_slots.*.opening_time' => 'nullable|required_if:availability_slots.*.status,1|date_format:H:i',
-            'availability_slots.*.closing_time' => 'nullable|required_if:availability_slots.*.status,1|date_format:H:i|after:availability_slots.*.opening_time',
+            'availability_slots.*.closing_time' => 'nullable|required_if:availability_slots.*.status,1|date_format:H:i',
         ]);
+
+        // Validate closing time
+        foreach ($validated['availability_slots'] as $index => $slot) {
+            if ((int) $slot['status'] !== 1) {
+                continue;
+            }
+
+            $openingTime = $slot['opening_time'];
+            $closingTime = $slot['closing_time'];
+
+            // Allow overnight slots, e.g. 17:00 to 00:00
+            if ($closingTime !== '00:00' && $closingTime <= $openingTime) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Closing time must be after opening time for slot {$index}.",
+                    'errors' => [
+                        "availability_slots.{$index}.closing_time" => [
+                            'Closing time must be after opening time.'
+                        ]
+                    ]
+                ], 422);
+            }
+        }
 
         AvailabilitySlot::where('user_id', $user->id)->delete();
 
         $data = [];
+
         foreach ($validated['availability_slots'] as $slot) {
             $data[] = [
-                'user_id'       => $user->id,
-                'day'           => $slot['day'],
-                'status'        => $slot['status'],
-                'opening_time'  => $slot['status'] ? $slot['opening_time'] : null,
-                'closing_time'  => $slot['status'] ? $slot['closing_time'] : null,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+                'user_id'      => $user->id,
+                'day'          => $slot['day'],
+                'status'       => $slot['status'],
+                'opening_time' => $slot['status'] ? $slot['opening_time'] : null,
+                'closing_time' => $slot['status'] ? $slot['closing_time'] : null,
+                'created_at'   => now(),
+                'updated_at'   => now(),
             ];
         }
 
         AvailabilitySlot::insert($data);
 
-        $user->update(['on_call_availability' => $request->on_call_availability]);
-        
-        if($user->profile_step <> 3){
-            // Update profile step
+        $user->update([
+            'on_call_availability' => $request->on_call_availability
+        ]);
+
+        if ($user->profile_step != 3) {
             $user->update([
                 'profile_step' => 2
             ]);
