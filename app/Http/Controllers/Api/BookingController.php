@@ -1357,6 +1357,8 @@ class BookingController extends Controller
         $query = Booking::select([
             'id',
             'status',
+            'user_id',
+            'provider_id',
             //'service_category_id',
             'payable_amount',
             'selected_days',
