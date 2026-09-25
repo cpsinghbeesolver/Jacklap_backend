@@ -538,8 +538,6 @@ class ServiceCategoryController extends Controller
     *     )
     * )
     */
-<<<<<<< Updated upstream
-=======
     // public function getUsersByServiceCategory(Request $request)
     // {
     //     $request->validate([
@@ -1008,7 +1006,6 @@ class ServiceCategoryController extends Controller
     //     ]);
     // }
 
->>>>>>> Stashed changes
     public function getUsersByServiceCategory(Request $request)
     {
         $request->validate([
@@ -1060,14 +1057,6 @@ class ServiceCategoryController extends Controller
             'service_with_item.*.service_id' => 'required_with:service_with_item|integer|exists:master_services,id',
             'service_with_item.*.item_ids' => 'nullable|array',
             'service_with_item.*.item_ids.*' => 'integer',
-<<<<<<< Updated upstream
-            'dates'               => 'nullable|array',
-            'dates.*.date'        => 'required_with:dates|date_format:Y-m-d',
-            'dates.*.time'        => 'nullable|date_format:H:i',
-            'dates_match'         => 'nullable|in:any,all', // default: all
-            'slot_duration'       => 'nullable|integer|min:1',
-            'timezone'            => 'required_with:dates|timezone:all_with_bc',
-=======
 
             // CHANGED: capped — each entry adds 1-2 correlated subqueries.
             'dates' => 'nullable|array|max:10',
@@ -1076,7 +1065,6 @@ class ServiceCategoryController extends Controller
             'dates_match' => 'nullable|in:any,all', // default: all
             'slot_duration' => 'nullable|integer|min:1',
             'timezone' => 'required_with:dates|timezone:all_with_bc',
->>>>>>> Stashed changes
         ]);
 
         $perPage = $request->per_page ?? 10;
@@ -1170,39 +1158,10 @@ class ServiceCategoryController extends Controller
                 });
             })
             ->when($request->dates, function ($q) use ($request) {
-<<<<<<< Updated upstream
-
-                $dates     = $request->dates;
-                $matchType = $request->dates_match ?? 'all';
-                $duration  = (int) ($request->slot_duration ?? 60);
-                $clientTz  = $request->timezone; // e.g. "Asia/Kolkata"
-
-                $applySlotConstraint = function (
-                    $subQ,
-                    $day,
-                    $time,
-                    $dateTimeUtc
-                ) use ($duration) {
-
-                    /*
-                    * availability_slots is stored in normal/local time
-                    * (e.g. 09:00-17:00). $day/$time here are ALSO in the
-                    * client's local time (untouched, as sent) — same clock
-                    * on both sides, no conversion needed.
-                    */
-                    $subQ->whereHas('availabilitySlots', function ($aq) use (
-                        $day,
-                        $time
-                    ) {
-
-                        $aq->where('day', $day)
-                        ->where('status', 1);
-=======
                 $dates = $request->dates;
                 $matchType = $request->dates_match ?? 'all';
                 $duration = (int) ($request->slot_duration ?? 60);
                 $clientTz = $request->timezone;
->>>>>>> Stashed changes
 
                 $applySlotConstraint = function ($subQ, $day, $time, $dateTimeUtc) use ($duration) {
                     $subQ->whereHas('availabilitySlots', function ($aq) use ($day, $time) {
@@ -1213,158 +1172,6 @@ class ServiceCategoryController extends Controller
                         }
                     });
 
-<<<<<<< Updated upstream
-                    /*
-                    * bookings.start_datetime / end_datetime are stored in UTC.
-                    * We've already converted the client's local request time
-                    * into UTC ($dateTimeUtc) using PHP/Carbon before this
-                    * closure runs, so this compares UTC against UTC directly
-                    * — no CONVERT_TZ or MySQL timezone tables needed.
-                    */
-                    if ($dateTimeUtc) {
-
-                        $subQ->whereDoesntHave('providerBookings', function ($bq) use (
-                            $dateTimeUtc,
-                            $duration
-                        ) {
-
-                            $bq->whereIn('status', [
-                                'confirmed',
-                                'in_progress'
-                            ])
-                            ->whereRaw(
-                                'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE)
-                                AND end_datetime > ?',
-                                [
-                                    $dateTimeUtc,
-                                    $duration,
-                                    $dateTimeUtc
-                                ]
-                            );
-                        });
-                    }
-                };
-
-
-                $q->where(function ($outer) use (
-                    $dates,
-                    $matchType,
-                    $applySlotConstraint,
-                    $clientTz
-                ) {
-
-                    foreach ($dates as $entry) {
-
-                        $date = $entry['date'];
-                        $time = $entry['time'] ?? null;
-
-                        // Day-of-week stays in the client's local calendar date —
-                        // untouched, exactly as sent.
-                        $day = strtolower(
-                            \Carbon\Carbon::parse($date)->format('l')
-                        );
-
-                        if ($time) {
-
-                            // Local time-of-day, untouched — used for availability_slots.
-                            $timeOnly = \Carbon\Carbon::createFromFormat('H:i', $time)->format('H:i:s');
-
-                            // Build the same local moment, but tagged with the client's
-                            // timezone, then convert ONLY this copy to UTC — used for
-                            // the bookings check. The original $date/$time are never
-                            // mutated.
-                            $dateTimeUtc = \Carbon\Carbon::createFromFormat(
-                                    'Y-m-d H:i',
-                                    "$date $time",
-                                    $clientTz
-                                )
-                                ->setTimezone('UTC')
-                                ->format('Y-m-d H:i:s');
-
-                        } else {
-                            $timeOnly    = null;
-                            $dateTimeUtc = null;
-                        }
-
-                        if ($matchType === 'any') {
-
-                            $outer->orWhere(function ($inner) use (
-                                $applySlotConstraint,
-                                $day,
-                                $timeOnly,
-                                $dateTimeUtc
-                            ) {
-
-                                $applySlotConstraint(
-                                    $inner,
-                                    $day,
-                                    $timeOnly,
-                                    $dateTimeUtc
-                                );
-                            });
-
-                        } else {
-
-                            $applySlotConstraint(
-                                $outer,
-                                $day,
-                                $timeOnly,
-                                $dateTimeUtc
-                            );
-                        }
-                    }
-                });
-            });
-            /*->when($request->dates, function ($q) use ($request) {
-
-                $dates     = $request->dates;
-                $matchType = $request->dates_match ?? 'all';
-                $duration  = (int) ($request->slot_duration ?? 60);
-
-                $applySlotConstraint = function (
-                    $subQ,
-                    $day,
-                    $time,
-                    $dateTime
-                ) use ($duration) {
-
-                   
-                    $subQ->whereHas('availabilitySlots', function ($aq) use (
-                        $day,
-                        $time
-                    ) {
-
-                        $aq->where('day', $day)
-                        ->where('status', 1);
-
-                        if ($time) {
-                            $aq->where('opening_time', '<=', $time)
-                            ->where('closing_time', '>=', $time);
-                        }
-                    });
-
-                 
-                    if ($dateTime) {
-
-                        $subQ->whereDoesntHave('providerBookings', function ($bq) use (
-                            $dateTime,
-                            $duration
-                        ) {
-
-                            $bq->whereIn('status', [
-                                'confirmed',
-                                'in_progress'
-                            ])
-                            ->whereRaw(
-                                'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE)
-                                AND end_datetime > ?',
-                                [
-                                    $dateTime,
-                                    $duration,
-                                    $dateTime
-                                ]
-                            );
-=======
                     if ($dateTimeUtc) {
                         $subQ->whereDoesntHave('providerBookings', function ($bq) use ($dateTimeUtc, $duration) {
                             $bq->whereIn('status', ['confirmed', 'in_progress'])
@@ -1372,7 +1179,6 @@ class ServiceCategoryController extends Controller
                                     'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE) AND end_datetime > ?',
                                     [$dateTimeUtc, $duration, $dateTimeUtc]
                                 );
->>>>>>> Stashed changes
                         });
                     }
                 };
@@ -1382,26 +1188,7 @@ class ServiceCategoryController extends Controller
                         $date = $entry['date'];
                         $time = $entry['time'] ?? null;
 
-<<<<<<< Updated upstream
-                        $day = strtolower(
-                            \Carbon\Carbon::parse($date)->format('l')
-                        );
-
-                    
-                        $timeOnly = $time
-                            ? \Carbon\Carbon::createFromFormat(
-                                'H:i',
-                                $time
-                            )->format('H:i:s')
-                            : null;
-
-                        
-                        $dateTime = $time
-                            ? $date . ' ' . $time . ':00'
-                            : null;
-=======
                         $day = strtolower(\Carbon\Carbon::parse($date)->format('l'));
->>>>>>> Stashed changes
 
                         if ($time) {
                             $timeOnly = \Carbon\Carbon::createFromFormat('H:i', $time)->format('H:i:s');
@@ -1422,16 +1209,13 @@ class ServiceCategoryController extends Controller
                         }
                     }
                 });
-            });*/
+            });
 
         // Apply distance logic ONLY if lat & long present
         if ($request->filled('latitude') && $request->filled('longitude')) {
             $lat = $request->latitude;
             $lng = $request->longitude;
 
-<<<<<<< Updated upstream
-            // Cheap, indexed pre-filter: shrinks the table to a rough ~100km box
-            // BEFORE any trig runs. This is what keeps the temp table small.
             $latDelta = 100 / 111.0;
             $lngDelta = 100 / (111.320 * cos(deg2rad($lat)));
 
@@ -1439,28 +1223,6 @@ class ServiceCategoryController extends Controller
                 ->whereNotNull('longitude')
                 ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
                 ->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta]);
-
-            // Exact distance, computed only for the already-shrunk set.
-            $distanceQuery = "ROUND((6371 * acos(
-                cos(radians($lat))
-                * cos(radians(users.latitude))
-                * cos(radians(users.longitude) - radians($lng))
-                + sin(radians($lat))
-                * sin(radians(users.latitude))
-            )), 2)";
-
-            $query->selectRaw("users.*, $distanceQuery as distance")
-                ->having('distance', '<=', 100)
-                ->orderBy('distance', 'asc');   // <-- sort by distance, correctly, on a small set
-=======
-            $latDelta = 100 / 111.0;
-            $lngDelta = 100 / (111.320 * cos(deg2rad($lat)));
-
-            $query->whereNotNull('latitude')
-                ->whereNotNull('longitude')
-                ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
-                ->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta]);
->>>>>>> Stashed changes
 
             $distanceExpr = "(6371 * acos(
                 cos(radians($lat))
@@ -1481,12 +1243,7 @@ class ServiceCategoryController extends Controller
                 ->selectRaw("users.*, ROUND($distanceExpr, 2) as distance")
                 ->orderByRaw("$distanceExpr asc");
         } else {
-<<<<<<< Updated upstream
-            $query->selectRaw('users.*, NULL as distance')
-                ->latest();
-=======
             $query->selectRaw('users.*, NULL as distance')->latest();
->>>>>>> Stashed changes
         }
 
         $users = $query->paginate($perPage);
