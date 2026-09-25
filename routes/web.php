@@ -61,6 +61,7 @@ use App\Http\Controllers\form_layouts\VerticalForm;
 use App\Http\Controllers\form_layouts\HorizontalForm;
 use App\Http\Controllers\tables\Basic as TablesBasic;
 use App\Http\Middleware\IsAdmin;
+use App\Http\Controllers\Admin\ServiceUseCaseController;
 
 // layout
 Route::get('/layouts/without-menu', [WithoutMenu::class, 'index'])->name('layouts-without-menu');
@@ -151,6 +152,16 @@ Route::middleware(['auth', IsAdmin::class])->group(function () {
         Route::delete('/delete/{id}', [MasterServiceController::class,'delete']);
         Route::get('/view/{id}', [MasterServiceController::class,'view'])->name('master-service.view');
     });
+
+    Route::get('/service-use-case', [ServiceUseCaseController::class, 'index'])->name('service-use-case');
+    // Route::get('/service-use-case', [ServiceUseCaseController::class, 'index'])->name('service-use-case-list');
+    Route::get('/service-use-case/create', [ServiceUseCaseController::class, 'create'])->name('create-service-use-case');
+    Route::post('/service-use-case/store', [ServiceUseCaseController::class, 'store'])->name('store-service-use-case');
+    Route::get('/service-use-case/edit/{id}', [ServiceUseCaseController::class, 'edit'])->name('edit-service-use-case');
+    Route::post('/service-use-case/update/{id}', [ServiceUseCaseController::class, 'update'])->name('update-service-use-case');
+    Route::get('/service-use-case/view/{id}', [ServiceUseCaseController::class, 'view'])->name('view-service-use-case');
+    Route::delete('/service-use-case/delete/{id}', [ServiceUseCaseController::class, 'delete'])->name('delete-service-use-case');
+    
     Route::prefix('document-type')->group(function () {
         Route::get('/',                      [IdentityTypeController::class, 'index'])->name('document-type');
         Route::get('/create',                [IdentityTypeController::class, 'create'])->name('document-type.create');

@@ -76,56 +76,55 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required',
-            'device_token'  => 'nullable|string',
-            'device_name'   => 'nullable|string',
-            'device_type'   => 'nullable|integer',
+            'email'        => 'required|email',
+            'password'     => 'required',
+            'device_token' => 'nullable|string',
+            'device_name'  => 'nullable|string',
+            'device_type'  => 'nullable|integer',
         ]);
-        $user = User::where('email', $request->email)->first();  
-        
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials',
             ], 400);
         }
 
-        // $credentials = $request->only('email', 'password');
-
-        // if(!Auth::attempt($credentials)) {
-        //     return response()->json(['message' => 'Invalid credentials'], 400);
-        // }
-
-        // $request->session()->regenerate();
         // Create Sanctum token
         $token = $user->createToken(
             $request->device_name ?? 'NextJS'
         )->plainTextToken;
 
-        //$user = $request->user();
+        // Get all roles
+        $roles = $user->getRoleNames()->values()->toArray();
 
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 500);
-        }
-        if ($user) {
-            $user->setAttribute(
-                'role',
-                $user->hasRole('provider') ? 'provider' : 'seeker'
-            );
-        }
-        if($user->hasRole('provider')){
-            // if (!$user->is_checked) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Your account is under review. Please wait for approval.',
-            //     ], 400);
-            // }
-            $user->load(['services','addonServices', 'professionalDetail', 'media','media.certificates', 'bankDetail','languages']);
+        // Check if user has only one role
+        $hasSingleRole = count($roles) === 1;
+
+        // Active role only for single-role users
+        $role = $hasSingleRole ? $roles[0] : null;
+
+        // Only load provider data if user has provider role
+        if ($user->hasRole('provider')) {
+            $user->load([
+                'services',
+                'addonServices',
+                'professionalDetail',
+                'media',
+                'media.certificates',
+                'bankDetail',
+                'languages'
+            ]);
         }
 
-        $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+        // Only set active role when user has a single role
+        if ($hasSingleRole) {
+            $user->setAttribute('role', $role);
+        }
 
+        // Save user device
         if ($request->device_token) {
             UserDevice::updateOrCreate(
                 [
@@ -140,19 +139,393 @@ class AuthController extends Controller
         }
 
         $response = response()->json([
-            'success' => true,
-            'message' => 'Login successful.',
-            'token'   => $token,
+            'success'    => true,
+            'message'    => 'Login successful.',
+            'token'      => $token,
             'token_type' => 'Bearer',
-            'user'    => $user
+            'user'       => $user,
         ]);
-        $isloggedIn = $user->email_verified_at ? 'true' : 'false';
-        if($user->email_verified_at){
-            $isloggedIn = 'true';
+
+        // isLoggedIn is common for all users
+        $isLoggedIn = $user->email_verified_at ? 'true' : 'false';
+
+        
+
+        /*
+        |--------------------------------------------------------------------------
+        | Single Role User
+        |--------------------------------------------------------------------------
+        */
+
+        if ($hasSingleRole) {
+            $response->cookie(
+                'isLoggedIn',
+                $isLoggedIn,
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
+            // Provider profile incomplete
+            if ($role === 'provider' && $user->profile_step < 3) {
+                $response->cookie(
+                    'is_auth_incomplete',
+                    'true',
+                    120,
+                    '/',
+                    null,
+                    true,
+                    false
+                );
+            } else {
+                $response->withoutCookie('is_auth_incomplete');
+            }
+
+            // Set active role
+            return $response->cookie(
+                'userRole',
+                $role,
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Multiple Role User
+        |--------------------------------------------------------------------------
+        |
+        | Do not set any active role.
+        | User must select a role and call switch-role API.
+        |
+        */
+
         return $response
-            ->cookie('isLoggedIn', $isloggedIn, 120, '/', null, true, false)
-            ->cookie('userRole', $role, 120, '/', null, true, false);
+            ->withoutCookie('isLoggedIn')
+            ->withoutCookie('userRole')
+            ->withoutCookie('is_auth_incomplete');
+    }
+    // public function login(Request $request)
+    // {
+    //     $request->validate([
+    //         'email'    => 'required|email',
+    //         'password' => 'required',
+    //         'device_token'  => 'nullable|string',
+    //         'device_name'   => 'nullable|string',
+    //         'device_type'   => 'nullable|integer',
+    //     ]);
+    //     $user = User::where('email', $request->email)->first();  
+        
+    //     if (! $user || ! Hash::check($request->password, $user->password)) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Invalid credentials',
+    //         ], 400);
+    //     }
+
+    //     // $credentials = $request->only('email', 'password');
+
+    //     // if(!Auth::attempt($credentials)) {
+    //     //     return response()->json(['message' => 'Invalid credentials'], 400);
+    //     // }
+
+    //     // $request->session()->regenerate();
+    //     // Create Sanctum token
+    //     $token = $user->createToken(
+    //         $request->device_name ?? 'NextJS'
+    //     )->plainTextToken;
+
+    //     //$user = $request->user();
+
+    //     if (!$user) {
+    //         return response()->json(['message' => 'User not found'], 500);
+    //     }
+        
+    //     if ($user) {
+    //         $user->setAttribute(
+    //             'role',
+    //             $user->hasRole('provider') ? 'provider' : 'seeker'
+    //         );
+    //     }
+    //     if($user->hasRole('provider')){
+    //         // if (!$user->is_checked) {
+    //         //     return response()->json([
+    //         //         'success' => false,
+    //         //         'message' => 'Your account is under review. Please wait for approval.',
+    //         //     ], 400);
+    //         // }
+    //         $user->load(['services','addonServices', 'professionalDetail', 'media','media.certificates', 'bankDetail','languages']);
+    //     }
+
+    //     $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+
+    //     if ($request->device_token) {
+    //         UserDevice::updateOrCreate(
+    //             [
+    //                 'device_token' => $request->device_token,
+    //             ],
+    //             [
+    //                 'user_id'     => $user->id,
+    //                 'device_name' => $request->device_name,
+    //                 'device_type' => $request->device_type,
+    //             ]
+    //         );
+    //     }
+
+    //     $response = response()->json([
+    //         'success' => true,
+    //         'message' => 'Login successful.',
+    //         'token'   => $token,
+    //         'token_type' => 'Bearer',
+    //         'user'    => $user
+    //     ]);
+    //     $isloggedIn = $user->email_verified_at ? 'true' : 'false';
+    //     if($user->email_verified_at){
+    //         $isloggedIn = 'true';
+    //     }
+    //     if ($role === 'provider' && $user->profile_step < 3) {
+    //         $response->cookie('is_auth_incomplete', 'true', 120, '/', null, true, false);
+    //     } else {
+    //         $response->withoutCookie('is_auth_incomplete');
+    //     }
+    //     return $response
+    //         ->cookie('isLoggedIn', $isloggedIn, 120, '/', null, true, false)
+    //         ->cookie('userRole', $role, 120, '/', null, true, false);
+    // }
+
+    /**
+     * @OA\Post(
+     *     path="/user/switch-role",
+     *     tags={"Web Auth"},
+     *     summary="Switch user role",
+     *     description="Switch the active role of an authenticated user. The user must already have the requested role.",
+     *     operationId="switchUserRole",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"role"},
+     *             @OA\Property(
+     *                 property="role",
+     *                 type="string",
+     *                 enum={"provider","seeker"},
+     *                 example="provider",
+     *                 description="Role to switch to"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Role switched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="success",
+     *                 type="boolean",
+     *                 example=true
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Switched to provider successfully."
+     *             ),
+     *             @OA\Property(
+     *                 property="role",
+     *                 type="string",
+     *                 example="provider"
+     *             ),
+     *             @OA\Property(
+     *                 property="roles",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="string",
+     *                     example="seeker"
+     *                 ),
+     *                 example={"seeker","provider"}
+     *             ),
+     *             @OA\Property(
+     *                 property="user",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="id",
+     *                     type="integer",
+     *                     example=1
+     *                 ),
+     *                 @OA\Property(
+     *                     property="name",
+     *                     type="string",
+     *                     example="Alex Morgan"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="email",
+     *                     type="string",
+     *                     example="alex.morgan@example.com"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="dob",
+     *                     type="string",
+     *                     format="date",
+     *                     example="1998-01-01"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="gender",
+     *                     type="string",
+     *                     example="male"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="phone",
+     *                     type="string",
+     *                     example="9876543210"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="role",
+     *                     type="string",
+     *                     example="provider"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="email_verified_at",
+     *                     type="string",
+     *                     format="date-time",
+     *                     example="2026-02-24T05:36:45.000000Z"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="professionalDetail",
+     *                     type="string",
+     *                     example="yes"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=403,
+     *         description="User does not have the requested role",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="success",
+     *                 type="boolean",
+     *                 example=false
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="You are not registered as a provider."
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="The role field is required."
+     *             ),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Unauthenticated."
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function switchRole(Request $request)
+    {
+        $request->validate([
+            'role' => ['required', 'string', 'in:provider,seeker'],
+        ]);
+
+        $user = $request->user();
+
+        // Check if user has this role
+        if (!$user->hasRole($request->role)) {
+            return response()->json([
+                'success' => false,
+                'message' => "You are not registered as a {$request->role}.",
+            ], 403);
+        }
+
+        $role = $request->role;
+
+        // Load data according to selected role
+        if ($role === 'provider') {
+            $user->load([
+                'services',
+                'addonServices',
+                'professionalDetail',
+                'media',
+                'media.certificates',
+                'bankDetail',
+                'languages',
+            ]);
+        }
+
+        // Set selected role for frontend
+        $user->setAttribute('role', $role);
+
+        $response = response()->json([
+            'success' => true,
+            'message' => "Switched to {$role} successfully.",
+            'role' => $role,
+            'roles' => $user->getRoleNames()->values()->toArray(),
+            'user' => $user,
+        ]);
+
+        $isLoggedIn = $user->email_verified_at ? 'true' : 'false';
+
+        // Provider profile completion
+        if ($role === 'provider' && $user->profile_step < 3) {
+            $response->cookie(
+                'is_auth_incomplete',
+                'true',
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
+        } else {
+            $response->withoutCookie('is_auth_incomplete');
+        }
+
+        return $response
+            ->cookie(
+                'isLoggedIn',
+                $isLoggedIn,
+                120,
+                '/',
+                null,
+                true,
+                false
+            )
+            ->cookie(
+                'userRole',
+                $role,
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
     }
 
     public function logout(Request $request)
@@ -505,7 +878,8 @@ class AuthController extends Controller
                 'dob'                => $user->dob,
                 'gender'             => $user->gender,
                 'phone'              => $user->phone,
-                'role'               => $user->getRoleNames()->first(),
+                'role'               => $validated['role'],
+                'roles'     => $user->getRoleNames()->values()->toArray(),
                 'languages'          => $user->languages
             ],
         ], 201);
@@ -817,7 +1191,13 @@ class AuthController extends Controller
         )->plainTextToken;
 
         $user->load(['roles', 'professionalDetail', 'media', 'bankDetail']);
-        $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+
+        if ($request->role) {
+            $role = $request->role;
+        } else {
+            $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+        }
+
         $response = response()->json([
             'success' => true,
             'message' => 'OTP verified successfully.',
@@ -980,7 +1360,12 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         $user->load(['roles', 'professionalDetail', 'media', 'bankDetail']);
-        $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+        if ($request->role) {
+            $role = $request->role;
+        } else {
+            $role = $user->hasRole('provider') ? 'provider' : 'seeker';
+        }
+        //$role = $user->hasRole('provider') ? 'provider' : 'seeker';
         $response = response()->json([
             'success' => true,
             'message' => 'OTP verified successfully.',
