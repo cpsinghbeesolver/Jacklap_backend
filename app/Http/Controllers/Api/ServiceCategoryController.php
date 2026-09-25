@@ -538,13 +538,484 @@ class ServiceCategoryController extends Controller
     *     )
     * )
     */
+<<<<<<< Updated upstream
+=======
+    // public function getUsersByServiceCategory(Request $request)
+    // {
+    //     $request->validate([
+    //         'service_category_id' => 'required|exists:service_categories,id',
+    //         'service_ids' => 'nullable|array',
+    //         'service_ids.*' => 'integer|exists:master_services,id',
+    //         'language_ids' => 'nullable|array',
+    //         'language_ids.*' => 'integer|exists:languages,id',
+    //         'per_page' => 'nullable|integer|min:1|max:50',
+    //         'latitude' => 'nullable|numeric',
+    //         'longitude' => 'nullable|numeric',
+    //         'teaching_mode' => 'nullable|integer|in:1,2,3',
+    //         'transmission_type' => 'nullable|integer|in:1,2,3',
+
+    //         'license_type_ids' => 'nullable|array',
+    //         'license_type_ids.*' => 'integer',
+
+    //         'material_type_ids' => 'nullable|array',
+    //         'material_type_ids.*' => 'integer',
+
+    //         'service_usecase_ids' => 'nullable|array',
+    //         'service_usecase_ids.*' => 'integer',
+    //         'service_with_class' => 'nullable|array',
+    //         'service_with_class.*.service_id' => 'required_with:service_with_class|integer|exists:master_services,id',
+    //         'service_with_class.*.subject_type' => 'nullable|integer|in:1,2',
+    //         'service_with_class.*.class_names' => [
+    //             'nullable',
+    //             'array',
+    //             function ($attribute, $value, $fail) use ($request) {
+    //                 preg_match('/service_with_class\.(\d+)\.class_names/', $attribute, $matches);
+    //                 $index = $matches[1] ?? null;
+
+    //                 if (!is_null($index)) {
+    //                     $subjectType = $request->input("service_with_class.$index.subject_type");
+
+    //                     if ($subjectType == 2 && !empty($value)) {
+    //                         $fail('class_names must be empty when subject_type is 2 (non-academic).');
+    //                     }
+    //                 }
+    //             }
+    //         ],
+    //         'service_with_class.*.class_names.*' => 'string',
+    //         'service_with_item' => 'nullable|array',
+    //         'service_with_item.*.service_id' => 'required_with:service_with_item|integer|exists:master_services,id',
+    //         'service_with_item.*.item_ids' => 'nullable|array',
+    //         'service_with_item.*.item_ids.*' => 'integer',
+    //         'dates'               => 'nullable|array',
+    //         'dates.*.date'        => 'required_with:dates|date_format:Y-m-d',
+    //         'dates.*.time'        => 'nullable|date_format:H:i',
+    //         'dates_match'         => 'nullable|in:any,all', // default: all
+    //         'slot_duration'       => 'nullable|integer|min:1',
+    //         'timezone'            => 'required_with:dates|timezone:all_with_bc',
+    //     ]);
+
+    //     $perPage = $request->per_page ?? 10;
+
+    //     $query = User::query()
+    //         ->with(['services','languages', 'addonServices', 'professionalDetail', 'media','availabilitySlots','licenseTypes',
+    //         'serviceUsecases.serviceUseCase'])
+    //         ->whereHas('professionalDetail', function ($q) use ($request) {
+    //             $q->where('service_category_id', $request->service_category_id);
+    //             if ($request->filled('teaching_mode')) {
+
+    //                 $teachingMode = $request->teaching_mode;
+            
+    //                 $q->where(function ($subQ) use ($teachingMode) {
+            
+    //                     $subQ->where('teaching_mode', $teachingMode)
+    //                         ->orWhere('teaching_mode', 3);
+            
+    //                 });
+    //             }
+            
+    //             if ($request->filled('transmission_type')) {
+            
+    //                 $transmissionType = $request->transmission_type;
+            
+    //                 $q->where(function ($subQ) use ($transmissionType) {
+            
+    //                     $subQ->where('transmission_type', $transmissionType)
+    //                         ->orWhere('transmission_type', 3);
+            
+    //                 });
+    //             }
+    //         })
+    //         // ->when($request->service_ids, function ($q) use ($request) {
+    //         //     $q->whereHas('services', function ($q2) use ($request) {
+    //         //         $q2->whereIn('service_id', $request->service_ids);
+    //         //     });
+    //         // })
+    //         ->when($request->service_ids, function ($q) use ($request) {
+
+    //             $serviceIds = $request->service_ids;
+
+    //             $q->whereHas('services', function ($q2) use ($serviceIds) {
+    //                 $q2->whereIn('service_id', $serviceIds);
+    //             }, '=', count($serviceIds));
+
+    //         })
+    //         ->when($request->service_with_class, function ($q) use ($request) {
+
+    //             foreach ($request->service_with_class as $filter) {
+            
+    //                 $serviceId   = $filter['service_id'];
+    //                 $subjectType = $filter['subject_type'] ?? null;
+            
+    //                 // class_names only valid for academic (subject_type = 1)
+    //                 $classNames  = ($subjectType == 2) ? null : ($filter['class_names'] ?? null);
+            
+    //                 $q->whereHas('services', function ($q2) use ($serviceId, $classNames, $subjectType) {
+            
+    //                     $q2->where('service_id', $serviceId);
+            
+    //                     if (!is_null($subjectType)) {
+    //                         $q2->where('subject_type', $subjectType);
+    //                     }
+            
+    //                     if (!empty($classNames)) {
+    //                         $q2->whereIn('class_name', $classNames);
+    //                     }
+    //                 });
+    //             }
+    //         })
+    //         ->when($request->service_with_item, function ($q) use ($request) {
+
+    //             foreach ($request->service_with_item as $filter) {
+            
+    //                 $serviceId = $filter['service_id'];
+    //                 $itemIds   = $filter['item_ids'] ?? null;
+            
+    //                 $q->whereHas('services', function ($q2) use ($serviceId, $itemIds) {
+            
+    //                     $q2->where('service_id', $serviceId);
+            
+    //                     if (!empty($itemIds)) {
+    //                         $q2->whereIn('service_item_id', $itemIds);
+    //                     }
+    //                 });
+    //             }
+    //         })
+    //         ->when($request->license_type_ids, function ($q) use ($request) {
+
+    //             $licenseTypeIds = $request->license_type_ids;
+            
+    //             $q->whereHas('licenseTypes', function ($q2) use ($licenseTypeIds) {
+            
+    //                 $q2->whereIn('license_type_id', $licenseTypeIds);
+            
+    //             });
+            
+    //         })
+    //         ->when($request->material_type_ids, function ($q) use ($request) {
+
+    //             $materialIds = $request->material_type_ids;
+            
+    //             $q->whereHas('providerMaterials', function ($q2) use ($materialIds) {
+            
+    //                 $q2->whereIn('material_type_id', $materialIds);
+            
+    //             });
+            
+    //         })
+    //         ->when($request->service_usecase_ids, function ($q) use ($request) {
+
+    //             $usecaseIds = $request->service_usecase_ids;
+            
+    //             $q->whereHas('serviceUsecases', function ($q2) use ($usecaseIds) {
+            
+    //                 $q2->whereIn('service_usecase_id', $usecaseIds);
+            
+    //             });
+            
+    //         })
+    //         ->when($request->language_ids, function ($q) use ($request) {
+    //             $q->whereHas('languages', function ($q2) use ($request) {
+    //                 $q2->whereIn('language_id', $request->language_ids);
+    //             });
+    //         })
+    //         ->when($request->dates, function ($q) use ($request) {
+
+    //             $dates     = $request->dates;
+    //             $matchType = $request->dates_match ?? 'all';
+    //             $duration  = (int) ($request->slot_duration ?? 60);
+    //             $clientTz  = $request->timezone; // e.g. "Asia/Kolkata"
+
+    //             $applySlotConstraint = function (
+    //                 $subQ,
+    //                 $day,
+    //                 $time,
+    //                 $dateTimeUtc
+    //             ) use ($duration) {
+
+    //                 /*
+    //                 * availability_slots is stored in normal/local time
+    //                 * (e.g. 09:00-17:00). $day/$time here are ALSO in the
+    //                 * client's local time (untouched, as sent) — same clock
+    //                 * on both sides, no conversion needed.
+    //                 */
+    //                 $subQ->whereHas('availabilitySlots', function ($aq) use (
+    //                     $day,
+    //                     $time
+    //                 ) {
+
+    //                     $aq->where('day', $day)
+    //                     ->where('status', 1);
+
+    //                     if ($time) {
+    //                         $aq->where('opening_time', '<=', $time)
+    //                         ->where('closing_time', '>=', $time);
+    //                     }
+    //                 });
+
+    //                 /*
+    //                 * bookings.start_datetime / end_datetime are stored in UTC.
+    //                 * We've already converted the client's local request time
+    //                 * into UTC ($dateTimeUtc) using PHP/Carbon before this
+    //                 * closure runs, so this compares UTC against UTC directly
+    //                 * — no CONVERT_TZ or MySQL timezone tables needed.
+    //                 */
+    //                 if ($dateTimeUtc) {
+
+    //                     $subQ->whereDoesntHave('providerBookings', function ($bq) use (
+    //                         $dateTimeUtc,
+    //                         $duration
+    //                     ) {
+
+    //                         $bq->whereIn('status', [
+    //                             'confirmed',
+    //                             'in_progress'
+    //                         ])
+    //                         ->whereRaw(
+    //                             'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE)
+    //                             AND end_datetime > ?',
+    //                             [
+    //                                 $dateTimeUtc,
+    //                                 $duration,
+    //                                 $dateTimeUtc
+    //                             ]
+    //                         );
+    //                     });
+    //                 }
+    //             };
+
+
+    //             $q->where(function ($outer) use (
+    //                 $dates,
+    //                 $matchType,
+    //                 $applySlotConstraint,
+    //                 $clientTz
+    //             ) {
+
+    //                 foreach ($dates as $entry) {
+
+    //                     $date = $entry['date'];
+    //                     $time = $entry['time'] ?? null;
+
+    //                     // Day-of-week stays in the client's local calendar date —
+    //                     // untouched, exactly as sent.
+    //                     $day = strtolower(
+    //                         \Carbon\Carbon::parse($date)->format('l')
+    //                     );
+
+    //                     if ($time) {
+
+    //                         // Local time-of-day, untouched — used for availability_slots.
+    //                         $timeOnly = \Carbon\Carbon::createFromFormat('H:i', $time)->format('H:i:s');
+
+    //                         // Build the same local moment, but tagged with the client's
+    //                         // timezone, then convert ONLY this copy to UTC — used for
+    //                         // the bookings check. The original $date/$time are never
+    //                         // mutated.
+    //                         $dateTimeUtc = \Carbon\Carbon::createFromFormat(
+    //                                 'Y-m-d H:i',
+    //                                 "$date $time",
+    //                                 $clientTz
+    //                             )
+    //                             ->setTimezone('UTC')
+    //                             ->format('Y-m-d H:i:s');
+
+    //                     } else {
+    //                         $timeOnly    = null;
+    //                         $dateTimeUtc = null;
+    //                     }
+
+    //                     if ($matchType === 'any') {
+
+    //                         $outer->orWhere(function ($inner) use (
+    //                             $applySlotConstraint,
+    //                             $day,
+    //                             $timeOnly,
+    //                             $dateTimeUtc
+    //                         ) {
+
+    //                             $applySlotConstraint(
+    //                                 $inner,
+    //                                 $day,
+    //                                 $timeOnly,
+    //                                 $dateTimeUtc
+    //                             );
+    //                         });
+
+    //                     } else {
+
+    //                         $applySlotConstraint(
+    //                             $outer,
+    //                             $day,
+    //                             $timeOnly,
+    //                             $dateTimeUtc
+    //                         );
+    //                     }
+    //                 }
+    //             });
+    //         });
+    //         /*->when($request->dates, function ($q) use ($request) {
+
+    //             $dates     = $request->dates;
+    //             $matchType = $request->dates_match ?? 'all';
+    //             $duration  = (int) ($request->slot_duration ?? 60);
+
+    //             $applySlotConstraint = function (
+    //                 $subQ,
+    //                 $day,
+    //                 $time,
+    //                 $dateTime
+    //             ) use ($duration) {
+
+                   
+    //                 $subQ->whereHas('availabilitySlots', function ($aq) use (
+    //                     $day,
+    //                     $time
+    //                 ) {
+
+    //                     $aq->where('day', $day)
+    //                     ->where('status', 1);
+
+    //                     if ($time) {
+    //                         $aq->where('opening_time', '<=', $time)
+    //                         ->where('closing_time', '>=', $time);
+    //                     }
+    //                 });
+
+                 
+    //                 if ($dateTime) {
+
+    //                     $subQ->whereDoesntHave('providerBookings', function ($bq) use (
+    //                         $dateTime,
+    //                         $duration
+    //                     ) {
+
+    //                         $bq->whereIn('status', [
+    //                             'confirmed',
+    //                             'in_progress'
+    //                         ])
+    //                         ->whereRaw(
+    //                             'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE)
+    //                             AND end_datetime > ?',
+    //                             [
+    //                                 $dateTime,
+    //                                 $duration,
+    //                                 $dateTime
+    //                             ]
+    //                         );
+    //                     });
+    //                 }
+    //             };
+
+
+    //             $q->where(function ($outer) use (
+    //                 $dates,
+    //                 $matchType,
+    //                 $applySlotConstraint
+    //             ) {
+
+    //                 foreach ($dates as $entry) {
+
+    //                     $date = $entry['date'];
+    //                     $time = $entry['time'] ?? null;
+
+    //                     $day = strtolower(
+    //                         \Carbon\Carbon::parse($date)->format('l')
+    //                     );
+
+                    
+    //                     $timeOnly = $time
+    //                         ? \Carbon\Carbon::createFromFormat(
+    //                             'H:i',
+    //                             $time
+    //                         )->format('H:i:s')
+    //                         : null;
+
+                        
+    //                     $dateTime = $time
+    //                         ? $date . ' ' . $time . ':00'
+    //                         : null;
+
+
+    //                     if ($matchType === 'any') {
+
+    //                         $outer->orWhere(function ($inner) use (
+    //                             $applySlotConstraint,
+    //                             $day,
+    //                             $timeOnly,
+    //                             $dateTime
+    //                         ) {
+
+    //                             $applySlotConstraint(
+    //                                 $inner,
+    //                                 $day,
+    //                                 $timeOnly,
+    //                                 $dateTime
+    //                             );
+    //                         });
+
+    //                     } else {
+
+    //                         $applySlotConstraint(
+    //                             $outer,
+    //                             $day,
+    //                             $timeOnly,
+    //                             $dateTime
+    //                         );
+    //                     }
+    //                 }
+    //             });
+    //         });*/
+
+    //     //Apply distance logic ONLY if lat & long present
+    //     if ($request->filled('latitude') && $request->filled('longitude')) {
+
+    //         $lat = $request->latitude;
+    //         $lng = $request->longitude;
+
+    //         // Cheap, indexed pre-filter: shrinks the table to a rough ~100km box
+    //         // BEFORE any trig runs. This is what keeps the temp table small.
+    //         $latDelta = 100 / 111.0;
+    //         $lngDelta = 100 / (111.320 * cos(deg2rad($lat)));
+
+    //         $query->whereNotNull('latitude')
+    //             ->whereNotNull('longitude')
+    //             ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
+    //             ->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta]);
+
+    //         // Exact distance, computed only for the already-shrunk set.
+    //         $distanceQuery = "ROUND((6371 * acos(
+    //             cos(radians($lat))
+    //             * cos(radians(users.latitude))
+    //             * cos(radians(users.longitude) - radians($lng))
+    //             + sin(radians($lat))
+    //             * sin(radians(users.latitude))
+    //         )), 2)";
+
+    //         $query->selectRaw("users.*, $distanceQuery as distance")
+    //             ->having('distance', '<=', 100)
+    //             ->orderBy('distance', 'asc');   // <-- sort by distance, correctly, on a small set
+
+    //     } else {
+    //         $query->selectRaw('users.*, NULL as distance')
+    //             ->latest();
+    //     }
+    //     $users = $query->paginate($perPage);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Users fetched successfully',
+    //         'data' => $users
+    //     ]);
+    // }
+
+>>>>>>> Stashed changes
     public function getUsersByServiceCategory(Request $request)
     {
         $request->validate([
             'service_category_id' => 'required|exists:service_categories,id',
-            'service_ids' => 'nullable|array',
+            'service_ids' => 'nullable|array|max:25',
             'service_ids.*' => 'integer|exists:master_services,id',
-            'language_ids' => 'nullable|array',
+            'language_ids' => 'nullable|array|max:25',
             'language_ids.*' => 'integer|exists:languages,id',
             'per_page' => 'nullable|integer|min:1|max:50',
             'latitude' => 'nullable|numeric',
@@ -552,15 +1023,18 @@ class ServiceCategoryController extends Controller
             'teaching_mode' => 'nullable|integer|in:1,2,3',
             'transmission_type' => 'nullable|integer|in:1,2,3',
 
-            'license_type_ids' => 'nullable|array',
+            'license_type_ids' => 'nullable|array|max:25',
             'license_type_ids.*' => 'integer',
 
-            'material_type_ids' => 'nullable|array',
+            'material_type_ids' => 'nullable|array|max:25',
             'material_type_ids.*' => 'integer',
 
-            'service_usecase_ids' => 'nullable|array',
+            'service_usecase_ids' => 'nullable|array|max:25',
             'service_usecase_ids.*' => 'integer',
-            'service_with_class' => 'nullable|array',
+
+            // CHANGED: capped to bound the number of correlated subqueries this
+            // filter can generate (previously unbounded).
+            'service_with_class' => 'nullable|array|max:10',
             'service_with_class.*.service_id' => 'required_with:service_with_class|integer|exists:master_services,id',
             'service_with_class.*.subject_type' => 'nullable|integer|in:1,2',
             'service_with_class.*.class_names' => [
@@ -580,81 +1054,79 @@ class ServiceCategoryController extends Controller
                 }
             ],
             'service_with_class.*.class_names.*' => 'string',
-            'service_with_item' => 'nullable|array',
+
+            // CHANGED: capped, same reasoning as above.
+            'service_with_item' => 'nullable|array|max:10',
             'service_with_item.*.service_id' => 'required_with:service_with_item|integer|exists:master_services,id',
             'service_with_item.*.item_ids' => 'nullable|array',
             'service_with_item.*.item_ids.*' => 'integer',
+<<<<<<< Updated upstream
             'dates'               => 'nullable|array',
             'dates.*.date'        => 'required_with:dates|date_format:Y-m-d',
             'dates.*.time'        => 'nullable|date_format:H:i',
             'dates_match'         => 'nullable|in:any,all', // default: all
             'slot_duration'       => 'nullable|integer|min:1',
             'timezone'            => 'required_with:dates|timezone:all_with_bc',
+=======
+
+            // CHANGED: capped — each entry adds 1-2 correlated subqueries.
+            'dates' => 'nullable|array|max:10',
+            'dates.*.date' => 'required_with:dates|date_format:Y-m-d',
+            'dates.*.time' => 'nullable|date_format:H:i',
+            'dates_match' => 'nullable|in:any,all', // default: all
+            'slot_duration' => 'nullable|integer|min:1',
+            'timezone' => 'required_with:dates|timezone:all_with_bc',
+>>>>>>> Stashed changes
         ]);
 
         $perPage = $request->per_page ?? 10;
 
         $query = User::query()
-            ->with(['services','languages', 'addonServices', 'professionalDetail', 'media','availabilitySlots','licenseTypes',
-            'serviceUsecases.serviceUseCase'])
+            ->with(['services', 'languages', 'addonServices', 'professionalDetail', 'media', 'availabilitySlots', 'licenseTypes',
+                'serviceUsecases.serviceUseCase'])
             ->whereHas('professionalDetail', function ($q) use ($request) {
                 $q->where('service_category_id', $request->service_category_id);
                 if ($request->filled('teaching_mode')) {
-
                     $teachingMode = $request->teaching_mode;
-            
                     $q->where(function ($subQ) use ($teachingMode) {
-            
                         $subQ->where('teaching_mode', $teachingMode)
                             ->orWhere('teaching_mode', 3);
-            
                     });
                 }
-            
                 if ($request->filled('transmission_type')) {
-            
                     $transmissionType = $request->transmission_type;
-            
                     $q->where(function ($subQ) use ($transmissionType) {
-            
                         $subQ->where('transmission_type', $transmissionType)
                             ->orWhere('transmission_type', 3);
-            
                     });
                 }
             })
-            // ->when($request->service_ids, function ($q) use ($request) {
-            //     $q->whereHas('services', function ($q2) use ($request) {
-            //         $q2->whereIn('service_id', $request->service_ids);
-            //     });
-            // })
+            // CHANGED: instead of a correlated COUNT() subquery evaluated per user row,
+            // resolve the matching user IDs once against the pivot table directly,
+            // then filter with a plain whereIn. Requires an index on
+            // services(service_id, user_id).
             ->when($request->service_ids, function ($q) use ($request) {
-
                 $serviceIds = $request->service_ids;
 
-                $q->whereHas('services', function ($q2) use ($serviceIds) {
-                    $q2->whereIn('service_id', $serviceIds);
-                }, '=', count($serviceIds));
+                $matchingUserIds = DB::table('services') // adjust table name if your pivot differs
+                    ->whereIn('service_id', $serviceIds)
+                    ->groupBy('user_id')
+                    ->havingRaw('COUNT(DISTINCT service_id) = ?', [count($serviceIds)])
+                    ->pluck('user_id');
 
+                $q->whereIn('id', $matchingUserIds);
             })
             ->when($request->service_with_class, function ($q) use ($request) {
-
                 foreach ($request->service_with_class as $filter) {
-            
-                    $serviceId   = $filter['service_id'];
+                    $serviceId = $filter['service_id'];
                     $subjectType = $filter['subject_type'] ?? null;
-            
-                    // class_names only valid for academic (subject_type = 1)
-                    $classNames  = ($subjectType == 2) ? null : ($filter['class_names'] ?? null);
-            
+                    $classNames = ($subjectType == 2) ? null : ($filter['class_names'] ?? null);
+
                     $q->whereHas('services', function ($q2) use ($serviceId, $classNames, $subjectType) {
-            
                         $q2->where('service_id', $serviceId);
-            
                         if (!is_null($subjectType)) {
                             $q2->where('subject_type', $subjectType);
                         }
-            
                         if (!empty($classNames)) {
                             $q2->whereIn('class_name', $classNames);
                         }
@@ -662,16 +1134,12 @@ class ServiceCategoryController extends Controller
                 }
             })
             ->when($request->service_with_item, function ($q) use ($request) {
-
                 foreach ($request->service_with_item as $filter) {
-            
                     $serviceId = $filter['service_id'];
-                    $itemIds   = $filter['item_ids'] ?? null;
-            
+                    $itemIds = $filter['item_ids'] ?? null;
+
                     $q->whereHas('services', function ($q2) use ($serviceId, $itemIds) {
-            
                         $q2->where('service_id', $serviceId);
-            
                         if (!empty($itemIds)) {
                             $q2->whereIn('service_item_id', $itemIds);
                         }
@@ -679,37 +1147,22 @@ class ServiceCategoryController extends Controller
                 }
             })
             ->when($request->license_type_ids, function ($q) use ($request) {
-
                 $licenseTypeIds = $request->license_type_ids;
-            
                 $q->whereHas('licenseTypes', function ($q2) use ($licenseTypeIds) {
-            
                     $q2->whereIn('license_type_id', $licenseTypeIds);
-            
                 });
-            
             })
             ->when($request->material_type_ids, function ($q) use ($request) {
-
                 $materialIds = $request->material_type_ids;
-            
                 $q->whereHas('providerMaterials', function ($q2) use ($materialIds) {
-            
                     $q2->whereIn('material_type_id', $materialIds);
-            
                 });
-            
             })
             ->when($request->service_usecase_ids, function ($q) use ($request) {
-
                 $usecaseIds = $request->service_usecase_ids;
-            
                 $q->whereHas('serviceUsecases', function ($q2) use ($usecaseIds) {
-            
                     $q2->whereIn('service_usecase_id', $usecaseIds);
-            
                 });
-            
             })
             ->when($request->language_ids, function ($q) use ($request) {
                 $q->whereHas('languages', function ($q2) use ($request) {
@@ -717,6 +1170,7 @@ class ServiceCategoryController extends Controller
                 });
             })
             ->when($request->dates, function ($q) use ($request) {
+<<<<<<< Updated upstream
 
                 $dates     = $request->dates;
                 $matchType = $request->dates_match ?? 'all';
@@ -743,13 +1197,23 @@ class ServiceCategoryController extends Controller
 
                         $aq->where('day', $day)
                         ->where('status', 1);
+=======
+                $dates = $request->dates;
+                $matchType = $request->dates_match ?? 'all';
+                $duration = (int) ($request->slot_duration ?? 60);
+                $clientTz = $request->timezone;
+>>>>>>> Stashed changes
 
+                $applySlotConstraint = function ($subQ, $day, $time, $dateTimeUtc) use ($duration) {
+                    $subQ->whereHas('availabilitySlots', function ($aq) use ($day, $time) {
+                        $aq->where('day', $day)->where('status', 1);
                         if ($time) {
                             $aq->where('opening_time', '<=', $time)
-                            ->where('closing_time', '>=', $time);
+                                ->where('closing_time', '>=', $time);
                         }
                     });
 
+<<<<<<< Updated upstream
                     /*
                     * bookings.start_datetime / end_datetime are stored in UTC.
                     * We've already converted the client's local request time
@@ -900,22 +1364,25 @@ class ServiceCategoryController extends Controller
                                     $dateTime
                                 ]
                             );
+=======
+                    if ($dateTimeUtc) {
+                        $subQ->whereDoesntHave('providerBookings', function ($bq) use ($dateTimeUtc, $duration) {
+                            $bq->whereIn('status', ['confirmed', 'in_progress'])
+                                ->whereRaw(
+                                    'start_datetime < DATE_ADD(?, INTERVAL ? MINUTE) AND end_datetime > ?',
+                                    [$dateTimeUtc, $duration, $dateTimeUtc]
+                                );
+>>>>>>> Stashed changes
                         });
                     }
                 };
 
-
-                $q->where(function ($outer) use (
-                    $dates,
-                    $matchType,
-                    $applySlotConstraint
-                ) {
-
+                $q->where(function ($outer) use ($dates, $matchType, $applySlotConstraint, $clientTz) {
                     foreach ($dates as $entry) {
-
                         $date = $entry['date'];
                         $time = $entry['time'] ?? null;
 
+<<<<<<< Updated upstream
                         $day = strtolower(
                             \Carbon\Carbon::parse($date)->format('l')
                         );
@@ -932,44 +1399,37 @@ class ServiceCategoryController extends Controller
                         $dateTime = $time
                             ? $date . ' ' . $time . ':00'
                             : null;
+=======
+                        $day = strtolower(\Carbon\Carbon::parse($date)->format('l'));
+>>>>>>> Stashed changes
 
+                        if ($time) {
+                            $timeOnly = \Carbon\Carbon::createFromFormat('H:i', $time)->format('H:i:s');
+                            $dateTimeUtc = \Carbon\Carbon::createFromFormat('Y-m-d H:i', "$date $time", $clientTz)
+                                ->setTimezone('UTC')
+                                ->format('Y-m-d H:i:s');
+                        } else {
+                            $timeOnly = null;
+                            $dateTimeUtc = null;
+                        }
 
                         if ($matchType === 'any') {
-
-                            $outer->orWhere(function ($inner) use (
-                                $applySlotConstraint,
-                                $day,
-                                $timeOnly,
-                                $dateTime
-                            ) {
-
-                                $applySlotConstraint(
-                                    $inner,
-                                    $day,
-                                    $timeOnly,
-                                    $dateTime
-                                );
+                            $outer->orWhere(function ($inner) use ($applySlotConstraint, $day, $timeOnly, $dateTimeUtc) {
+                                $applySlotConstraint($inner, $day, $timeOnly, $dateTimeUtc);
                             });
-
                         } else {
-
-                            $applySlotConstraint(
-                                $outer,
-                                $day,
-                                $timeOnly,
-                                $dateTime
-                            );
+                            $applySlotConstraint($outer, $day, $timeOnly, $dateTimeUtc);
                         }
                     }
                 });
             });*/
 
-        //Apply distance logic ONLY if lat & long present
+        // Apply distance logic ONLY if lat & long present
         if ($request->filled('latitude') && $request->filled('longitude')) {
-
             $lat = $request->latitude;
             $lng = $request->longitude;
 
+<<<<<<< Updated upstream
             // Cheap, indexed pre-filter: shrinks the table to a rough ~100km box
             // BEFORE any trig runs. This is what keeps the temp table small.
             $latDelta = 100 / 111.0;
@@ -992,11 +1452,43 @@ class ServiceCategoryController extends Controller
             $query->selectRaw("users.*, $distanceQuery as distance")
                 ->having('distance', '<=', 100)
                 ->orderBy('distance', 'asc');   // <-- sort by distance, correctly, on a small set
+=======
+            $latDelta = 100 / 111.0;
+            $lngDelta = 100 / (111.320 * cos(deg2rad($lat)));
 
+            $query->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
+                ->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta]);
+>>>>>>> Stashed changes
+
+            $distanceExpr = "(6371 * acos(
+                cos(radians($lat))
+                * cos(radians(users.latitude))
+                * cos(radians(users.longitude) - radians($lng))
+                + sin(radians($lat))
+                * sin(radians(users.latitude))
+            ))";
+
+            // CHANGED: filter with whereRaw on the raw expression instead of
+            // having() on the "distance" select alias. having() on an alias
+            // forces Laravel's paginate() to wrap this entire query (including
+            // this trig calculation and every whereHas above) in a subquery
+            // just to compute the row count for pagination — effectively
+            // running the whole expensive query twice per request.
+            // whereRaw() lets paginate()'s count query stay a plain COUNT(*).
+            $query->whereRaw("$distanceExpr <= 100")
+                ->selectRaw("users.*, ROUND($distanceExpr, 2) as distance")
+                ->orderByRaw("$distanceExpr asc");
         } else {
+<<<<<<< Updated upstream
             $query->selectRaw('users.*, NULL as distance')
                 ->latest();
+=======
+            $query->selectRaw('users.*, NULL as distance')->latest();
+>>>>>>> Stashed changes
         }
+
         $users = $query->paginate($perPage);
 
         return response()->json([

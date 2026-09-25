@@ -1422,7 +1422,7 @@ class BookingController extends Controller
      *     )
      * )
      */
-    public function getBookingDetail($id)
+    public function getBookingDetail(Request $request, $id)
     {
         $user = auth()->user();
 
