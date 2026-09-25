@@ -1248,6 +1248,18 @@ class ServiceCategoryController extends Controller
 
         $users = $query->paginate($perPage);
 
+        $users->getCollection()->transform(function ($user) {
+            return [
+                'id'                  => $user->id,
+                'name'                => $user->name,
+                'image_url'           => $user->image_url,
+                'average_rating'      => number_format((float) $user->average_rating, 1, '.', ''),
+                'distance'            => (float) $user->distance,
+                'availability_status' => $user->availability_status,
+                'service_category_id' => $user->professionalDetail?->service_category_id,
+            ];
+        });
+
         return response()->json([
             'success' => true,
             'message' => 'Users fetched successfully',
