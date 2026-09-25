@@ -15,6 +15,8 @@ class Payment extends Model
         'currency',
         'status',
         'stripe_response',
+        'purpose',
+        'cancellation_reason',
     ];
 
     protected $casts = [

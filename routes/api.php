@@ -97,7 +97,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::post('/cart/store', [CartController::class, 'storeCart']);
     Route::delete('/cart/clear', [CartController::class, 'clearCart']);
-
+    Route::post('/user/switch-role', [AuthController::class, 'switchRole']);
     Route::post('/booking/store', [BookingController::class, 'storeBooking']);
     Route::put('/booking/update/{id}', [BookingController::class, 'updateBooking']);
     Route::get('/booking/{id}/slots',     [BookingController::class, 'listSlots']);
@@ -139,6 +139,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/booking/{id}/payment/intent',          [PaymentController::class, 'createIntent']);
     Route::get('/booking/{id}/payment/verify/{intentId}',[PaymentController::class, 'verifyPayment']);
     Route::post('/booking/{id}/payment/confirm',          [PaymentController::class, 'confirmIntent']);
+    Route::post('booking/{id}/cancellation-fee/intent', [PaymentController::class, 'createCancellationFeeIntent']);
+    Route::get('cancellation-fee/payment/return', [PaymentController::class, 'returnPage'])->name('cancellation-fee.payment.return');
     Route::post('/submit-review', [ReviewController::class, 'submitReview']);
     Route::get('/get-review', [ReviewController::class, 'getReview']);
     Route::get('/get-settings', [SettingsController::class, 'index']);

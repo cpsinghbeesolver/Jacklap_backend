@@ -38,24 +38,44 @@ class RegisterUserRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Check email
-            $emailUser = User::where('email', $this->email)->first();
 
-            if ($emailUser && $emailUser->hasRole($this->role)) {
+            $emailUser = User::where('email', $this->email)->first();
+            $phoneUser = User::where('phone', $this->phone)->first();
+
+            // Email exists with a different phone
+            if ($emailUser && $emailUser->phone !== $this->phone) {
                 $validator->errors()->add(
                     'email',
-                    "This email is already registered as a {$this->role}."
+                    'This email is already registered with another phone number.'
                 );
             }
 
-            // Check phone
-            $phoneUser = User::where('phone', $this->phone)->first();
-
-            if ($phoneUser && $phoneUser->hasRole($this->role)) {
+            // Phone exists with a different email
+            if ($phoneUser && $phoneUser->email !== $this->email) {
                 $validator->errors()->add(
                     'phone',
-                    "This phone number is already registered as a {$this->role}."
+                    'This phone number is already registered with another email.'
                 );
+            }
+
+            // Same email + same phone
+            if (
+                $emailUser &&
+                $phoneUser &&
+                $emailUser->id === $phoneUser->id
+            ) {
+                // Check if requested role already exists
+                if ($emailUser->hasRole($this->role)) {
+                    $validator->errors()->add(
+                        'email',
+                        "This user is already registered as a {$this->role}."
+                    );
+
+                    $validator->errors()->add(
+                        'phone',
+                        "This user is already registered as a {$this->role}."
+                    );
+                }
             }
         });
     }

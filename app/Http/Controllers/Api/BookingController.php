@@ -132,7 +132,7 @@ class BookingController extends Controller
                 $configuredFee = (float) $setting->platform_fee;
 
                 if ($platformFeeType === 'perc') {
-                    $platformFee = ($totalAmount * $configuredFee) / 100;
+                    $platformFee = ($cart->total_amount * $configuredFee) / 100;
                 } elseif ($platformFeeType === 'num') {
                     $platformFee = $configuredFee;
                 }
@@ -161,7 +161,7 @@ class BookingController extends Controller
                 'selected_days'       => $cart->selected_days,
                 'time_slots'          => $timeSlots,
 
-                'total_hours'         => $totalHours,
+                'total_hours'         => $cart->total_hours,
                 'total_amount'        => $cart->total_amount,
                 'discount'            => 0,
                 'tax'                 => 0,
@@ -202,7 +202,7 @@ class BookingController extends Controller
 
                 if ($setting) {
                     $configuredFee = (float) $setting->platform_fee;
-
+                    $platformFeeType = $setting->platform_fee_type;
                     if ($platformFeeType === 'perc') {
                         $platformFee = ($slotPayable * $configuredFee) / 100;
                     } elseif ($platformFeeType === 'num') {
@@ -553,6 +553,7 @@ class BookingController extends Controller
                     }
 
                     if ($setting) {
+                        $platformFeeType = $setting->platform_fee_type;
                         $configuredFee = (float) $setting->platform_fee;
 
                         if ($platformFeeType === 'perc') {
@@ -599,7 +600,7 @@ class BookingController extends Controller
 
                     if ($setting) {
                         $configuredFee = (float) $setting->platform_fee;
-
+                        $platformFeeType = $setting->platform_fee_type;
                         if ($platformFeeType === 'perc') {
                             $platformFee = ($slotPayable * $configuredFee) / 100;
                         } elseif ($platformFeeType === 'num') {
@@ -662,7 +663,7 @@ class BookingController extends Controller
                         
                         if ($setting) {
                             $configuredFee = (float) $setting->platform_fee;
-
+                            $platformFeeType = $setting->platform_fee_type;
                             if ($platformFeeType === 'perc') {
                                 $platformFee = ($slotPayable * $configuredFee) / 100;
                             } elseif ($platformFeeType === 'num') {
@@ -701,7 +702,6 @@ class BookingController extends Controller
                 if ($setting) {
                     $platformFeeType = $setting->platform_fee_type;
                     $configuredFee = (float) $setting->platform_fee;
-
                     if ($platformFeeType === 'perc') {
                         $platformFee = ($wholeTotalAmount * $configuredFee) / 100;
                     } elseif ($platformFeeType === 'num') {
@@ -1138,6 +1138,24 @@ class BookingController extends Controller
             ], 422);
         }
 
+        if ($booking->isWithinCancellationWindow() && !$booking->cancellation_fee_paid) {
+            $fee = $booking->calculateCancellationFee();
+
+            if ($fee > 0) {
+                $booking->update([
+                    'cancellation_fee_required' => true,
+                    'cancellation_fee_amount'   => $fee,
+                ]);
+
+                return response()->json([
+                    'success'                   => false,
+                    'requires_cancellation_fee' => true,
+                    'cancellation_fee_amount'   => $fee,
+                    'message'                   => "Cancelling this close to your booking requires a cancellation fee of {$fee}. Please pay to proceed.",
+                ], 422);
+            }
+        }
+
         if ($request->boolean('cancel_all') || $booking->isParent()) {
             $this->cancelParentAndChildren($booking, $request->reason);
 
@@ -1229,7 +1247,7 @@ class BookingController extends Controller
         }, $timeSlots);
     }
 
-    private function cancelParentAndChildren(Booking $parent, ?string $reason)
+    public function cancelParentAndChildren(Booking $parent, ?string $reason)
     {
         Booking::where('parent_booking_id', $parent->id)
             ->whereNotIn('status', ['completed', 'cancelled'])
@@ -1244,7 +1262,7 @@ class BookingController extends Controller
         ]);
     }
 
-    private function syncParentStatus(int $parentId)
+    public function syncParentStatus(int $parentId)
     {
         $parent = Booking::find($parentId);
         if (!$parent) return;
@@ -1346,7 +1364,15 @@ class BookingController extends Controller
             $query->whereIn('status', $statuses);
         }
 
-        if ($user->hasRole('provider')) {
+        $roles = $user->getRoleNames();
+
+        if ($roles->count() > 1 && $request->filled('role')) {
+            if ($request->role === 'provider') {
+                $query->where('provider_id', $user->id);
+            } elseif ($request->role === 'seeker') {
+                $query->where('user_id', $user->id);
+            }
+        } elseif ($user->hasRole('provider')) {
             $query->where('provider_id', $user->id);
         } else {
             $query->where('user_id', $user->id);
@@ -1396,7 +1422,7 @@ class BookingController extends Controller
      *     )
      * )
      */
-    public function getBookingDetail($id)
+    public function getBookingDetail(Request $request, $id)
     {
         $user = auth()->user();
 
@@ -1415,15 +1441,40 @@ class BookingController extends Controller
             ], 404);
         }
 
-        // Authorization check
-        if (
-            $user->hasRole('provider') && $booking->provider_id != $user->id ||
-            !$user->hasRole('provider') && $booking->user_id != $user->id
-        ) {
+        $roles = $user->getRoleNames();
+
+        $role = $roles->count() > 1 && $request->filled('role')
+            ? $request->role
+            : ($user->hasRole('provider') ? 'provider' : 'seeker');
+
+        // Validate requested role belongs to user
+        if (!$user->hasRole($role)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized access'
+                'message' => 'You do not have this role.'
             ], 403);
+        }
+
+        // Authorization check based on active role
+        if ($role === 'provider') {
+            if ($booking->provider_id != $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 403);
+            }
+        } else {
+            if ($booking->user_id != $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access'
+                ], 403);
+            }
+        }
+
+        // OTP is visible only for seeker
+        if ($role === 'seeker') {
+            $booking->makeVisible('otp');
         }
 
         return response()->json([
@@ -1779,19 +1830,42 @@ class BookingController extends Controller
         }
     }
 
-    public function downloadInvoice($id,Request $request)
+    public function downloadInvoice($id, Request $request)
     {
-        $booking = Booking::with(['user', 'provider', 'items'])->findOrFail($id);
-        
+        $booking = Booking::with(['user', 'provider', 'items', 'serviceItems'])->findOrFail($id);
+
         if ($request->filled('timezone')) {
-            $booking->start_datetime = Carbon::parse($booking->start_datetime)->setTimezone($request->timezone)->format('Y-m-d H:i:s');
-            $booking->end_datetime = Carbon::parse($booking->end_datetime)->setTimezone($request->timezone)->format('Y-m-d H:i:s');
+            $booking->start_datetime  = Carbon::parse($booking->start_datetime)->setTimezone($request->timezone)->format('Y-m-d H:i:s');
+            $booking->end_datetime    = Carbon::parse($booking->end_datetime)->setTimezone($request->timezone)->format('Y-m-d H:i:s');
             $booking->slot_start_time = Carbon::parse($booking->slot_start_time)->setTimezone($request->timezone)->format('H:i:s');
-            $booking->slot_end_time = Carbon::parse($booking->slot_end_time)->setTimezone($request->timezone)->format('H:i:s');
+            $booking->slot_end_time   = Carbon::parse($booking->slot_end_time)->setTimezone($request->timezone)->format('H:i:s');
         }
 
-        if (!auth()->user()->hasRole('admin')) {
-            abort_if($booking->user_id !== auth()->id(), 403, 'Unauthorized');
+        $authUser = auth()->user();
+
+        // Admin can view either side's invoice. The seeker who made the
+        // booking (user_id) can view theirs. The provider assigned to the
+        // booking (provider_id) can view theirs — this is the part that was
+        // missing before; only the exact user_id or an admin could download.
+        $isAdmin    = $authUser->hasRole('admin');
+        $isSeeker   = $booking->user_id === $authUser->id;
+        $isProvider = $booking->provider_id === $authUser->id;
+
+        abort_unless($isAdmin || $isSeeker || $isProvider, 403, 'Unauthorized');
+
+        // Which invoice layout to render. A logged-in provider viewing their
+        // own booking always gets the payout-style invoice (platform fee
+        // deducted, net amount shown). Admin defaults to the standard
+        // customer-facing invoice unless explicitly asked for the provider
+        // view via ?as=provider.
+        $viewAsProvider = $isProvider || ($isAdmin && $request->query('as') === 'provider');
+
+        $platformFee       = 0.00;
+        $providerNetAmount = (float) $booking->payable_amount;
+
+        if ($viewAsProvider) {
+            $platformFee       = $this->calculatePlatformFee($booking);
+            $providerNetAmount = round((float) $booking->payable_amount - $platformFee, 2);
         }
 
         $options = new Options();
@@ -1801,13 +1875,13 @@ class BookingController extends Controller
         $pdf = new Dompdf($options);
 
         $pdf->loadHtml(
-            view('content.booking.invoice', compact('booking'))->render()
+            view('content.booking.invoice', compact('booking', 'viewAsProvider', 'platformFee', 'providerNetAmount'))->render()
         );
 
         $pdf->setPaper('A4', 'portrait');
         $pdf->render();
 
-        $fileName = 'booking-invoice-' . $booking->booking_number . '.pdf';
+        $fileName  = 'booking-invoice-' . $booking->booking_number . ($viewAsProvider ? '-provider' : '') . '.pdf';
         $pdfOutput = $pdf->output();
 
         return response($pdfOutput, 200)
@@ -1815,5 +1889,26 @@ class BookingController extends Controller
             ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache');
+    }
+
+    /**
+     * Platform fee deducted from the provider's payout. Uses whatever was
+     * recorded on the booking itself (Booking::platform_fee /
+     * platform_fee_type) rather than the live Setting, since the fee/type in
+     * effect at booking time is what should apply retroactively — mirrors
+     * how Booking::calculateCancellationFee() reads its own 'perc' convention
+     * from Setting, but this reads the value already stored per-booking.
+     */
+    private function calculatePlatformFee(Booking $booking): float
+    {
+        if (empty($booking->platform_fee)) {
+            return 0.00;
+        }
+
+        if (in_array($booking->platform_fee_type, ['perc', 'percentage'], true)) {
+            return round(((float) $booking->payable_amount * (float) $booking->platform_fee) / 100, 2);
+        }
+
+        return round((float) $booking->platform_fee, 2); // flat fee
     }
 }
