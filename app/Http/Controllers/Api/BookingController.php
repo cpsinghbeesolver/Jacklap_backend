@@ -1357,6 +1357,7 @@ class BookingController extends Controller
         $query = Booking::select([
             'id',
             'status',
+            //'service_category_id',
             'payable_amount',
             'selected_days',
             'slot_start_time',
@@ -1367,7 +1368,7 @@ class BookingController extends Controller
             'end_datetime',
             'booking_number',
             'address_json',
-        ])->with(['serviceCategory','items.service:id,name,is_default,type','addonItems.addonService:id,name,type,price','user:id,name,country_code,phone,image', 'provider:id,name,image'])->whereNotNull('parent_booking_id')
+        ])->with(['user:id,name,country_code,phone,image', 'provider:id,name,image'])->whereNotNull('parent_booking_id')
             ->latest();
 
         if (!empty($statuses)) {
