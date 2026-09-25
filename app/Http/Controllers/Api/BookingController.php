@@ -1354,7 +1354,23 @@ class BookingController extends Controller
             ]
         )->validate();
 
-        $query = Booking::with(['serviceCategory','items.service:id,name,is_default,type','addonItems.addonService:id,name,type,price','user:id,name,country_code,phone,image', 'provider:id,name,image'])->whereNotNull('parent_booking_id')
+        $query = Booking::select([
+            'id',
+            'status',
+            'user_id',
+            'provider_id',
+            //'service_category_id',
+            'payable_amount',
+            'selected_days',
+            'slot_start_time',
+            'start_datetime',
+            'slot_end_time',
+            'slot_date',
+            'duration_type',
+            'end_datetime',
+            'booking_number',
+            'address_json',
+        ])->with(['user:id,name,country_code,phone,image', 'provider:id,name,image'])->whereNotNull('parent_booking_id')
             ->latest();
 
         if (!empty($statuses)) {
