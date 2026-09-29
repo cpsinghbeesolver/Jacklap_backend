@@ -61,6 +61,7 @@ class Booking extends Model
         'cancellation_fee_amount',
         'cancellation_fee_paid',
         'cancellation_fee_paid_at',
+        'platform_fee_value'
     ];
 
     protected $casts = [

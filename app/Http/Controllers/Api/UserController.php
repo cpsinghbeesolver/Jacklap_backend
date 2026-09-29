@@ -1790,6 +1790,7 @@ class UserController extends Controller
         $recurringBookings = \App\Models\Booking::where('provider_id', $providerId)
             ->where('is_recurring', 1)
             ->whereIn('status', [
+                'pending',
                 'confirmed',
                 'start_journey',
                 'in_progress'
@@ -1803,6 +1804,7 @@ class UserController extends Controller
                 $startDate->copy()->addDays(29)->endOfDay(),
             ])
             ->whereIn('status', [
+                'pending',
                 'confirmed',
                 'start_journey',
                 'in_progress'
