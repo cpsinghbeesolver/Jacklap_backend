@@ -1411,32 +1411,7 @@ class UserController extends Controller
          */
         elseif ($type == 'last_3_months') {
 
-            $startDate = Carbon::now()->subMonths(2)->startOfMonth();
-
-            $data = $query
-                ->select(
-                    DB::raw('MONTH(updated_at) as month'),
-                    DB::raw('YEAR(updated_at) as year'),
-                    DB::raw('SUM(total_amount) as earnings')
-                )
-                ->whereDate('updated_at', '>=', $startDate)
-                ->groupBy('month', 'year')
-                ->orderBy('year')
-                ->orderBy('month')
-                ->get()
-                ->map(function ($item) {
-
-                    $item->label = Carbon::create(
-                        $item->year,
-                        $item->month,
-                        1
-                    )->format('F Y');
-
-                    return [
-                        'label' => $item->label,
-                        'earnings' => $item->earnings,
-                    ];
-                });
+            $data = $this->monthWiseEarnings($query, 2);
         }
 
         /**
@@ -1444,32 +1419,7 @@ class UserController extends Controller
          */
         elseif ($type == 'six_month') {
 
-            $startDate = Carbon::now()->subMonths(5)->startOfMonth();
-
-            $data = $query
-                ->select(
-                    DB::raw('MONTH(updated_at) as month'),
-                    DB::raw('YEAR(updated_at) as year'),
-                    DB::raw('SUM(total_amount) as earnings')
-                )
-                ->whereDate('updated_at', '>=', $startDate)
-                ->groupBy('month', 'year')
-                ->orderBy('year')
-                ->orderBy('month')
-                ->get()
-                ->map(function ($item) {
-
-                    $item->label = Carbon::create(
-                        $item->year,
-                        $item->month,
-                        1
-                    )->format('F Y');
-
-                    return [
-                        'label' => $item->label,
-                        'earnings' => $item->earnings,
-                    ];
-                });
+            $data = $this->monthWiseEarnings($query, 5);
         }
 
         /**
@@ -1477,14 +1427,8 @@ class UserController extends Controller
          */
         else {
 
-            $data = $query
-                ->select(
-                    DB::raw('YEAR(updated_at) as label'),
-                    DB::raw('SUM(total_amount) as earnings')
-                )
-                ->groupBy('label')
-                ->orderBy('label')
-                ->get();
+            $monthsBack = now()->month - 1; // Jan = 0 months back
+            $data = $this->monthWiseEarnings($query, $monthsBack, now()->startOfYear());
         }
 
         return response()->json([
@@ -1492,6 +1436,34 @@ class UserController extends Controller
             'type' => $type,
             'data' => $data
         ]);
+    }
+
+    protected function monthWiseEarnings($query, int $monthsBack, ?Carbon $forcedStart = null)
+    {
+        $start = $forcedStart ?? now()->subMonths($monthsBack)->startOfMonth();
+
+        $earnings = (clone $query)
+            ->select(
+                DB::raw('YEAR(updated_at) as year'),
+                DB::raw('MONTH(updated_at) as month'),
+                DB::raw('SUM(total_amount) as earnings')
+            )
+            ->whereDate('updated_at', '>=', $start)
+            ->groupBy('year', 'month')
+            ->get()
+            ->keyBy(fn ($row) => $row->year . '-' . $row->month);
+
+        $period = CarbonPeriod::create($start, now()->endOfMonth(), '1 month');
+
+        return collect($period)->map(function ($date) use ($earnings) {
+            $key = $date->year . '-' . $date->month;
+            $row = $earnings->get($key);
+
+            return [
+                'label' => $date->format('F Y'),
+                'earnings' => (float) ($row->earnings ?? 0),
+            ];
+        })->values();
     }
 
     /**

@@ -1584,7 +1584,7 @@ class BookingController extends Controller
     {
         $request->validate([
             'booking_id' => 'required|exists:bookings,id',
-            'action' => 'required|in:pending,confirmed,start_journey, cancelled,in_progress,completed',
+            'action' => 'required|in:pending,confirmed,start_journey,cancelled,in_progress,completed',
             'otp' => 'required_if:action,in_progress',
         ]);
 
