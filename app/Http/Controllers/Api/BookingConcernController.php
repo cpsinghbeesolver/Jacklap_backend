@@ -360,16 +360,16 @@ class BookingConcernController extends Controller
 
             if (!$request->boolean('continue_with_service')) {
 
-                broadcast(new BookingStatusUpdated(
-                    $booking->id,
-                    $booking->status,
-                    $booking->provider_id,
-                    $booking->user_id
-                ));
+                // broadcast(new BookingStatusUpdated(
+                //     $booking->id,
+                //     $booking->status,
+                //     $booking->provider_id,
+                //     $booking->user_id
+                // ));
 
-                Mail::send(new BookingStatusMail($booking));
+                // Mail::send(new BookingStatusMail($booking));
 
-                $this->sendBookingStatusNotification($booking);
+                //$this->sendBookingStatusNotification($booking);
             }
 
             $concern->load('files');
