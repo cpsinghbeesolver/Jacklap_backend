@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\BookingStatusMail;
 use App\Services\FirebaseNotificationService;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 class BookingConcernController extends Controller
 {
@@ -360,16 +361,15 @@ class BookingConcernController extends Controller
 
             if (!$request->boolean('continue_with_service')) {
 
-                // broadcast(new BookingStatusUpdated(
-                //     $booking->id,
-                //     $booking->status,
-                //     $booking->provider_id,
-                //     $booking->user_id
-                // ));
+                broadcast(new BookingStatusUpdated(
+                    $booking->id,
+                    $booking->status,
+                    $booking->provider_id,
+                    $booking->user_id
+                ));
 
-                // Mail::send(new BookingStatusMail($booking));
-
-                //$this->sendBookingStatusNotification($booking);
+                $this->sendBookingConcernClosedNotification($booking, $request->type, $againstUserId);
+                $this->sendBookingConcernClosedMail($booking, $request->type, $againstUserId);
             }
 
             $concern->load('files');
@@ -395,31 +395,27 @@ class BookingConcernController extends Controller
         }
     }
 
-    private function sendBookingStatusNotification(Booking $booking): void
+    /**
+     * Notifies the OTHER party (not the one who raised the concern) that the
+     * booking was closed. $raisedByType is 'seeker' or 'provider' — the
+     * request's `type` param. $recipientId is $againstUserId: provider_id
+     * when a seeker raised it, user_id when a provider raised it.
+     */
+    private function sendBookingConcernClosedNotification(Booking $booking, string $raisedByType, int $recipientId): void
     {
-        $title = 'Booking Status Updated';
+        $title = 'Booking Closed';
 
-        $descriptions = [
-            'confirmed'     => 'Your booking has been confirmed by the provider.',
-            'start_journey' => 'Your provider has started the journey to your location.',
-            'in_progress'   => 'Your booking service has started.',
-            'completed'     => 'Your booking has been completed successfully.',
-            'cancelled'     => 'Your booking has been cancelled by the provider.',
-            'closed'     => 'Your booking has been closed by the provider.',
-        ];
-
-        $description = $descriptions[$booking->status]
-            ?? 'Your booking status has been updated.';
-
-        $notification_type = $booking->status ?? 'booking_updated';
+        $description = $raisedByType === 'seeker'
+            ? 'The seeker raised a concern and chose not to continue, so this booking has been closed.'
+            : 'The provider raised a concern and chose not to continue, so this booking has been closed.';
 
         try {
             app(FirebaseNotificationService::class)->sendPushNotificationSync(
-                [$booking->user_id],
+                [$recipientId],
                 $title,
                 $description,
                 false,
-                $notification_type,
+                Booking::STATUS_CLOSED,
                 [
                     'type' => 'booking_status_updated',
                     'entity' => 'booking',
@@ -431,10 +427,36 @@ class BookingConcernController extends Controller
                 ]
             );
         } catch (\Throwable $e) {
-            Log::info('Booking status notification failed', [
+            Log::info('Booking concern closed notification failed', [
                 'booking_id' => $booking->id,
-                'user_id' => $booking->user_id,
-                'status' => $booking->status,
+                'recipient_id' => $recipientId,
+                'raised_by' => $raisedByType,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Emails the OTHER party that the booking was closed. Same vice-versa
+     * logic as the push notification: seeker raises → provider gets mailed,
+     * provider raises → seeker gets mailed.
+     */
+    private function sendBookingConcernClosedMail(Booking $booking, string $raisedByType, int $recipientId): void
+    {
+        try {
+            $recipient = User::find($recipientId);
+
+            if (!$recipient || !$recipient->email) {
+                return;
+            }
+
+            Mail::to($recipient->email)->send(new BookingStatusMail($booking));
+
+        } catch (\Throwable $e) {
+            Log::info('Booking concern closed mail failed', [
+                'booking_id' => $booking->id,
+                'recipient_id' => $recipientId,
+                'raised_by' => $raisedByType,
                 'error' => $e->getMessage(),
             ]);
         }
