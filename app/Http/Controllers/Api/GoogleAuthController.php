@@ -222,9 +222,7 @@ class GoogleAuthController extends Controller
         ], 201);
  
         $isloggedIn = $user->email_verified_at ? 'true' : 'false';
-        if($user->email_verified_at){
-            $isloggedIn = 'true';
-        }
+
         return $response
             ->cookie('isLoggedIn', $isloggedIn, 120, '/', null, true, false)
             ->cookie('userRole', $role, 120, '/', null, true, false);
@@ -361,7 +359,9 @@ class GoogleAuthController extends Controller
             'token'   => $token,
             'user'    => $user
         ]);
-       if ($hasSingleRole) {
+
+        $isLoggedIn = $user->email_verified_at ? 'true' : 'false';
+        if ($hasSingleRole) {
             $response->cookie(
                 'isLoggedIn',
                 $isLoggedIn,
