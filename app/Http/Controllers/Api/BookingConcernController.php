@@ -8,6 +8,11 @@ use App\Models\BookingConcern;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Events\BookingStatusUpdated;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BookingStatusMail;
+use App\Services\FirebaseNotificationService;
+use Illuminate\Support\Facades\Log;
 
 class BookingConcernController extends Controller
 {
@@ -307,8 +312,11 @@ class BookingConcernController extends Controller
             $concern = DB::transaction(function () use (
                 $request,
                 $userId,
-                $againstUserId
+                $againstUserId,
+                $booking
             ) {
+                $continueWithService = $request->boolean('continue_with_service');
+
                 $concern = BookingConcern::create([
                     'booking_id' => $request->booking_id,
                     'user_id' => $userId,
@@ -316,9 +324,14 @@ class BookingConcernController extends Controller
                     'against_user_id' => $againstUserId,
                     'reason' => $request->reason,
                     'description' => $request->description,
-                    'continue_with_service' => $request->boolean('continue_with_service'),
+                    'continue_with_service' => $continueWithService,
                     'status' => 'pending',
                 ]);
+
+                if (!$continueWithService) {
+                    $booking->status = Booking::STATUS_CLOSED;
+                    $booking->save();
+                }
 
                 /*
                  * Store attachment through the existing
@@ -345,6 +358,20 @@ class BookingConcernController extends Controller
                 return $concern;
             });
 
+            if (!$request->boolean('continue_with_service')) {
+
+                broadcast(new BookingStatusUpdated(
+                    $booking->id,
+                    $booking->status,
+                    $booking->provider_id,
+                    $booking->user_id
+                ));
+
+                Mail::send(new BookingStatusMail($booking));
+
+                $this->sendBookingStatusNotification($booking);
+            }
+
             $concern->load('files');
 
             return response()->json([
@@ -365,6 +392,51 @@ class BookingConcernController extends Controller
                 'success' => false,
                 'message' => 'Something went wrong while raising the concern.',
             ], 500);
+        }
+    }
+
+    private function sendBookingStatusNotification(Booking $booking): void
+    {
+        $title = 'Booking Status Updated';
+
+        $descriptions = [
+            'confirmed'     => 'Your booking has been confirmed by the provider.',
+            'start_journey' => 'Your provider has started the journey to your location.',
+            'in_progress'   => 'Your booking service has started.',
+            'completed'     => 'Your booking has been completed successfully.',
+            'cancelled'     => 'Your booking has been cancelled by the provider.',
+            'closed'     => 'Your booking has been closed by the provider.',
+        ];
+
+        $description = $descriptions[$booking->status]
+            ?? 'Your booking status has been updated.';
+
+        $notification_type = $booking->status ?? 'booking_updated';
+
+        try {
+            app(FirebaseNotificationService::class)->sendPushNotificationSync(
+                [$booking->user_id],
+                $title,
+                $description,
+                false,
+                $notification_type,
+                [
+                    'type' => 'booking_status_updated',
+                    'entity' => 'booking',
+                    'entity_id' => $booking->id,
+                    'booking_id' => $booking->id,
+                    'parent_booking_id' => $booking->parent_booking_id ?? $booking->id,
+                    'booking_number' => $booking->booking_number,
+                    'status' => $booking->status,
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::info('Booking status notification failed', [
+                'booking_id' => $booking->id,
+                'user_id' => $booking->user_id,
+                'status' => $booking->status,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

@@ -1296,7 +1296,7 @@ class BookingController extends Controller
             ['status' => $statuses],
             [
                 'status' => 'nullable|array',
-                'status.*' => 'string|in:pending,confirmed,start_journey,in_progress,completed,cancelled,expired'
+                'status.*' => 'string|in:pending,confirmed,start_journey,in_progress,completed,cancelled,expired,closed'
             ]
         )->validate();
 
@@ -1696,6 +1696,7 @@ class BookingController extends Controller
             'in_progress'   => 'Your booking service has started.',
             'completed'     => 'Your booking has been completed successfully.',
             'cancelled'     => 'Your booking has been cancelled by the provider.',
+            'closed'     => 'Your booking has been closed by the provider.',
         ];
 
         $description = $descriptions[$booking->status]
