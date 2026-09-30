@@ -127,6 +127,7 @@ class GoogleAuthController extends Controller
             'email'     => 'required|email|max:255|unique:users,email',
             'social_id' => 'required|string',
             'gender' => 'required|string',
+            'dob'      => ['required_if:role,provider', 'nullable', 'date', 'before:today'],
             'phone' => 'nullable|string|max:15|unique:users,phone',
             'device_token'  => 'nullable|string',
             'device_name'   => 'nullable|string',
