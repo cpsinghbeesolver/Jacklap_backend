@@ -44,14 +44,19 @@ class BookingConcernController extends Controller
      *                         description="Type of user raising the concern"
      *                     ),
      *
-     *                     @OA\Property(
+     *                      @OA\Property(
      *                         property="reason",
      *                         type="string",
      *                         maxLength=255,
      *                         example="Service issue",
      *                         description="Reason for raising the concern"
-     *                     ),
-     *
+     *                      ),
+     *                      @OA\Property(
+     *                          property="continue_with_service",
+     *                           type="boolean",
+     *                           example=true,
+     *                           description="Indicates whether the user wants to continue with the service. If false, the job will be closed."
+     *                      ),
      *                     @OA\Property(
      *                         property="description",
      *                         type="string",
@@ -229,6 +234,10 @@ class BookingConcernController extends Controller
                 'nullable',
                 'string',
             ],
+            'continue_with_service' => [
+                'required',
+                'boolean',
+            ],
             'attachment' => [
                 'nullable',
                 'file',
@@ -307,6 +316,7 @@ class BookingConcernController extends Controller
                     'against_user_id' => $againstUserId,
                     'reason' => $request->reason,
                     'description' => $request->description,
+                    'continue_with_service' => $request->boolean('continue_with_service'),
                     'status' => 'pending',
                 ]);
 

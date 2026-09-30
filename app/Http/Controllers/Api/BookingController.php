@@ -1458,7 +1458,8 @@ class BookingController extends Controller
                 'items.service:id,name,is_default,type',
                 'addonItems.addonService:id,name,type,price',
                 'provider:id,name,image',
-                'user:id,name,country_code,phone,image'
+                'user:id,name,country_code,phone,image',
+                'concerns'
             ])
             ->find($id);
 
