@@ -70,7 +70,7 @@
       "url": "/payout-requests",
       "icon": "menu-icon tf-icons ri-bank-card-line",
       "name": "Payout Requests",
-      "slug": "payout-requests"
+      "slug": "payout-list"
     },
     {
       "url": "/page",
