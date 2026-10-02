@@ -61,6 +61,7 @@ class Booking extends Model
         'cancellation_fee_amount',
         'cancellation_fee_paid',
         'cancellation_fee_paid_at',
+        'platform_fee_value'
     ];
 
     protected $casts = [
@@ -102,6 +103,8 @@ class Booking extends Model
     public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_EXPIRED = 'expired';
+    public const STATUS_CLOSED = 'closed';
 
     /*
     |--------------------------------------------------------------------------

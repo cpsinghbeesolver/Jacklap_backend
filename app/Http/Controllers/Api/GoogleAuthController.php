@@ -126,6 +126,8 @@ class GoogleAuthController extends Controller
         $validated = $request->validate([
             'email'     => 'required|email|max:255|unique:users,email',
             'social_id' => 'required|string',
+            'gender' => 'required|string',
+            'dob'      => ['required_if:role,provider', 'nullable', 'date', 'before:today'],
             'phone' => 'nullable|string|max:15|unique:users,phone',
             'device_token'  => 'nullable|string',
             'device_name'   => 'nullable|string',
@@ -199,7 +201,8 @@ class GoogleAuthController extends Controller
             ], 500);
         }
 
-        $role = $user->getRoleNames()->first();
+        // Active role only for single-role users
+        $role = $request->role;
  
         $response = response()->json([
             'success' => true,
@@ -212,15 +215,27 @@ class GoogleAuthController extends Controller
                 'dob'                => $user->dob,
                 'gender'             => $user->gender,
                 'phone'              => $user->phone,
-                'role'               => $role,
+                'role'               => $request->role,
+                'roles'              => $user->getRoleNames()->values()->toArray(),
                 'languages'          => $user->languages
             ],
         ], 201);
  
         $isloggedIn = $user->email_verified_at ? 'true' : 'false';
-        if($user->email_verified_at){
-            $isloggedIn = 'true';
+        if ($role === 'provider' && $user->profile_step < 3) {
+            $response->cookie(
+                'is_auth_incomplete',
+                'true',
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
+        } else {
+            $response->withoutCookie('is_auth_incomplete');
         }
+        
         return $response
             ->cookie('isLoggedIn', $isloggedIn, 120, '/', null, true, false)
             ->cookie('userRole', $role, 120, '/', null, true, false);
@@ -309,14 +324,30 @@ class GoogleAuthController extends Controller
                 'message' => 'Missing Google account',
             ], 400);
         }
-        if ($user) {
-            $user->setAttribute(
-                'role',
-                $user->hasRole('provider') ? 'provider' : 'seeker'
-            );
+        $roles = $user->getRoleNames()->values()->toArray();
+
+        // Check if user has only one role
+        $hasSingleRole = count($roles) === 1;
+
+        // Active role only for single-role users
+        $role = $hasSingleRole ? $roles[0] : null;
+
+        // Only load provider data if user has provider role
+        if ($user->hasRole('provider')) {
+            $user->load([
+                'services',
+                'addonServices',
+                'professionalDetail',
+                'media',
+                'media.certificates',
+                'bankDetail',
+                'languages'
+            ]);
         }
-        if($user->hasRole('provider')){
-            $user->load(['services','addonServices', 'professionalDetail', 'media','media.certificates', 'bankDetail','languages']);
+
+        // Only set active role when user has a single role
+        if ($hasSingleRole) {
+            $user->setAttribute('role', $role);
         }
         
         $request->session()->regenerate();
@@ -341,14 +372,58 @@ class GoogleAuthController extends Controller
             'token'   => $token,
             'user'    => $user
         ]);
-       $role = $user->getRoleNames()->first();
 
-        $isloggedIn = $user->email_verified_at ? 'true' : 'false';
-        if($user->email_verified_at){
-            $isloggedIn = 'true';
+        $isLoggedIn = $user->email_verified_at ? 'true' : 'false';
+        if ($hasSingleRole) {
+            $response->cookie(
+                'isLoggedIn',
+                $isLoggedIn,
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
+            // Provider profile incomplete
+            if ($role === 'provider' && $user->profile_step < 3) {
+                $response->cookie(
+                    'is_auth_incomplete',
+                    'true',
+                    120,
+                    '/',
+                    null,
+                    true,
+                    false
+                );
+            } else {
+                $response->withoutCookie('is_auth_incomplete');
+            }
+
+            // Set active role
+            return $response->cookie(
+                'userRole',
+                $role,
+                120,
+                '/',
+                null,
+                true,
+                false
+            );
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Multiple Role User
+        |--------------------------------------------------------------------------
+        |
+        | Do not set any active role.
+        | User must select a role and call switch-role API.
+        |
+        */
+
         return $response
-            ->cookie('isLoggedIn', $isloggedIn, 120, '/', null, true, false)
-            ->cookie('userRole', $role, 120, '/', null, true, false);
+            ->withoutCookie('isLoggedIn')
+            ->withoutCookie('userRole')
+            ->withoutCookie('is_auth_incomplete');
     }
 }

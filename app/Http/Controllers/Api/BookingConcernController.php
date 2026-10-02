@@ -8,6 +8,12 @@ use App\Models\BookingConcern;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Events\BookingStatusUpdated;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BookingStatusMail;
+use App\Services\FirebaseNotificationService;
+use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 class BookingConcernController extends Controller
 {
@@ -44,14 +50,19 @@ class BookingConcernController extends Controller
      *                         description="Type of user raising the concern"
      *                     ),
      *
-     *                     @OA\Property(
+     *                      @OA\Property(
      *                         property="reason",
      *                         type="string",
      *                         maxLength=255,
      *                         example="Service issue",
      *                         description="Reason for raising the concern"
-     *                     ),
-     *
+     *                      ),
+     *                      @OA\Property(
+     *                          property="continue_with_service",
+     *                           type="boolean",
+     *                           example=true,
+     *                           description="Indicates whether the user wants to continue with the service. If false, the job will be closed."
+     *                      ),
      *                     @OA\Property(
      *                         property="description",
      *                         type="string",
@@ -229,6 +240,10 @@ class BookingConcernController extends Controller
                 'nullable',
                 'string',
             ],
+            'continue_with_service' => [
+                'required',
+                'boolean',
+            ],
             'attachment' => [
                 'nullable',
                 'file',
@@ -298,8 +313,11 @@ class BookingConcernController extends Controller
             $concern = DB::transaction(function () use (
                 $request,
                 $userId,
-                $againstUserId
+                $againstUserId,
+                $booking
             ) {
+                $continueWithService = $request->boolean('continue_with_service');
+
                 $concern = BookingConcern::create([
                     'booking_id' => $request->booking_id,
                     'user_id' => $userId,
@@ -307,8 +325,14 @@ class BookingConcernController extends Controller
                     'against_user_id' => $againstUserId,
                     'reason' => $request->reason,
                     'description' => $request->description,
+                    'continue_with_service' => $continueWithService,
                     'status' => 'pending',
                 ]);
+
+                if (!$continueWithService) {
+                    $booking->status = Booking::STATUS_CLOSED;
+                    $booking->save();
+                }
 
                 /*
                  * Store attachment through the existing
@@ -335,6 +359,19 @@ class BookingConcernController extends Controller
                 return $concern;
             });
 
+            if (!$request->boolean('continue_with_service')) {
+
+                broadcast(new BookingStatusUpdated(
+                    $booking->id,
+                    $booking->status,
+                    $booking->provider_id,
+                    $booking->user_id
+                ));
+
+                $this->sendBookingConcernClosedNotification($booking, $request->type, $againstUserId);
+                $this->sendBookingConcernClosedMail($booking, $request->type, $againstUserId);
+            }
+
             $concern->load('files');
 
             return response()->json([
@@ -355,6 +392,73 @@ class BookingConcernController extends Controller
                 'success' => false,
                 'message' => 'Something went wrong while raising the concern.',
             ], 500);
+        }
+    }
+
+    /**
+     * Notifies the OTHER party (not the one who raised the concern) that the
+     * booking was closed. $raisedByType is 'seeker' or 'provider' — the
+     * request's `type` param. $recipientId is $againstUserId: provider_id
+     * when a seeker raised it, user_id when a provider raised it.
+     */
+    private function sendBookingConcernClosedNotification(Booking $booking, string $raisedByType, int $recipientId): void
+    {
+        $title = 'Booking Closed';
+
+        $description = $raisedByType === 'seeker'
+            ? 'The seeker raised a concern and chose not to continue, so this booking has been closed.'
+            : 'The provider raised a concern and chose not to continue, so this booking has been closed.';
+
+        try {
+            app(FirebaseNotificationService::class)->sendPushNotificationSync(
+                [$recipientId],
+                $title,
+                $description,
+                false,
+                Booking::STATUS_CLOSED,
+                [
+                    'type' => 'booking_status_updated',
+                    'entity' => 'booking',
+                    'entity_id' => $booking->id,
+                    'booking_id' => $booking->id,
+                    'parent_booking_id' => $booking->parent_booking_id ?? $booking->id,
+                    'booking_number' => $booking->booking_number,
+                    'status' => $booking->status,
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::info('Booking concern closed notification failed', [
+                'booking_id' => $booking->id,
+                'recipient_id' => $recipientId,
+                'raised_by' => $raisedByType,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Emails the OTHER party that the booking was closed. Same vice-versa
+     * logic as the push notification: seeker raises → provider gets mailed,
+     * provider raises → seeker gets mailed.
+     */
+    private function sendBookingConcernClosedMail(Booking $booking, string $raisedByType, int $recipientId): void
+    {
+        try {
+            $recipient = User::find($recipientId);
+
+            if (!$recipient || !$recipient->email) {
+                return;
+            }
+
+            Mail::to($recipient->email)->send(new BookingStatusMail($booking));
+
+        } catch (\Throwable $e) {
+            Log::info('Booking concern closed mail failed', [
+                'booking_id' => $booking->id,
+                'recipient_id' => $recipientId,
+                'raised_by' => $raisedByType,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
