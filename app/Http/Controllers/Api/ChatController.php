@@ -132,7 +132,8 @@ class ChatController extends Controller
         $conversations = Conversation::with([
             'provider:id,name,image',
             'seeker:id,name,image',
-            'latestMessage'
+            'latestMessage',
+            'booking:id,status'
         ])
         ->where('provider_id', $userId)
         ->orWhere('seeker_id', $userId)

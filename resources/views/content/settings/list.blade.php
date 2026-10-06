@@ -114,6 +114,42 @@
             </div>
             </div>
 
+            {{-- Tax --}}
+  <div class="col-md-6">
+    <div class="settings-panel">
+      <div class="d-flex align-items-center gap-3 mb-4">
+        <span class="settings-panel-icon">
+          <i class="ri-percent-line"></i>
+        </span>
+
+        <div>
+          <h5 class="mb-1">Tax</h5>
+          <p class="mb-0 text-muted small">
+            Tax percentage applied to applicable bookings.
+          </p>
+        </div>
+      </div>
+
+      <div class="form-floating form-floating-outline">
+        <input type="number"
+               name="tax"
+               id="tax"
+               class="form-control @error('tax') is-invalid @enderror"
+               min="1"
+               max="100"
+               step="0.01"
+               placeholder="18"
+               value="{{ old('tax', $settings->tax ?? 18) }}">
+
+        <label for="tax">Tax percentage (%)</label>
+
+        @error('tax')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+      </div>
+    </div>
+  </div>
+
             <div class="mt-6">
               <button class="btn btn-primary">Save changes</button>
               <button type="reset" class="btn btn-outline-secondary" onclick="window.location.reload();">

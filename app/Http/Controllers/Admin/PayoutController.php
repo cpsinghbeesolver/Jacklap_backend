@@ -70,7 +70,7 @@ class PayoutController extends Controller
                 ->make(true);
         }
 
-        return view('content.payout.list');
+        return view('content.payout.index');
     }
 
     public function view($id)

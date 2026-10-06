@@ -186,6 +186,20 @@ class ServiceCategorySeeder extends Seeder
                     //     ],
                     // ],
                 ];
+
+                // Items that must be marked is_optional = 1 (Home Cleaning only, matched case-insensitively)
+                $optionalItems = array_map('strtolower', [
+                    'Full cleaning',
+                    'Cabinets and appliances',
+                    'Wall spot cleaning',
+                    'Window (interior)',
+                    'Carpet (basic)',
+                    'Balcony cleaning',
+                    'Deep Cleaning',
+                ]);
+
+                // Safe if the migration for is_optional has not been run yet
+                $hasOptionalColumn = Schema::hasColumn('master_service_items', 'is_optional');
  
                 foreach ($serviceGroups as $group) {
  
@@ -204,17 +218,31 @@ class ServiceCategorySeeder extends Seeder
                     );
  
                     foreach ($group['items'] as $index => $itemName) {
-                        MasterServiceItem::firstOrCreate(
+
+                        $isOptional = in_array(strtolower($itemName), $optionalItems, true) ? 1 : 0;
+
+                        $itemDefaults = [
+                            'description' => $itemName . ' service item',
+                            'status'      => 1,
+                            'sort_order'  => $index + 1,
+                        ];
+
+                        if ($hasOptionalColumn) {
+                            $itemDefaults['is_optional'] = $isOptional;
+                        }
+
+                        $item = MasterServiceItem::firstOrCreate(
                             [
                                 'name'              => $itemName,
                                 'master_service_id' => $masterService->id,
                             ],
-                            [
-                                'description' => $itemName . ' service item',
-                                'status'      => 1,
-                                'sort_order'  => $index + 1,
-                            ]
+                            $itemDefaults
                         );
+
+                        // firstOrCreate skips existing rows, so fix ONLY is_optional on already-seeded items
+                        if ($hasOptionalColumn && (int) $item->is_optional !== $isOptional) {
+                            $item->update(['is_optional' => $isOptional]);
+                        }
                     }
                 }
  
