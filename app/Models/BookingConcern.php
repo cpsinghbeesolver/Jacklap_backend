@@ -19,6 +19,7 @@ class BookingConcern extends Model
         'status',
         'admin_response',
         'resolved_at',
+        'continue_with_service'
     ];
 
     protected $casts = [

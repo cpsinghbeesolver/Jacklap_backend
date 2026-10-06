@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use App\Models\UserDevice;
 use App\Notifications\PushNotification;
+use App\Events\UnreadCountUpdated;
 
 class FirebaseNotificationService
 {
@@ -75,6 +76,8 @@ class FirebaseNotificationService
                 'entity_id' => $data['entity_id']
             ], $id));
             $notificationId = $id;
+            event(UnreadCountUpdated::for($user));
+
             $fcmData = array_map(
                 fn ($value) => is_scalar($value)
                     ? (string) $value
