@@ -4,7 +4,7 @@ namespace App\Models\ChatModule;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
-
+use App\Models\Booking;
 class Conversation extends Model
 {
     protected $fillable = [
@@ -21,6 +21,11 @@ class Conversation extends Model
     public function provider()
     {
         return $this->belongsTo(User::class, 'provider_id');
+    }
+
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class, 'booking_id');
     }
 
     public function seeker()
